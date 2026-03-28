@@ -1,5 +1,6 @@
 """CLI entry point for myUNC Scraper."""
 
+import argparse
 import sys
 from pathlib import Path
 
@@ -73,35 +74,68 @@ def scrape_all():
     check_evaluation()
 
 
-MENU = {
-    "1": ("Generate Schedule ICS", generate_schedule),
-    "2": ("Check Transcript of Grades (notify on change)", check_transcript),
-    "3": ("Check Student Evaluation (notify on change)", check_evaluation),
-    "4": ("Scrape All", scrape_all),
-    "5": ("Exit", None),
-}
-
-
 def main():
-    while True:
-        print("\n=== myUNC Scraper ===")
-        for key, (label, _) in MENU.items():
-            print(f"  {key}) {label}")
-        choice = input("\nSelect option: ").strip()
+    parser = argparse.ArgumentParser(description="myUNC Scraper")
+    parser.add_argument(
+        "-s", "--schedule", action="store_true", help="Generate Schedule ICS"
+    )
+    parser.add_argument(
+        "-t",
+        "--transcript",
+        action="store_true",
+        help="Check Transcript of Grades (notify on change)",
+    )
+    parser.add_argument(
+        "-e",
+        "--evaluation",
+        action="store_true",
+        help="Check Student Evaluation (notify on change)",
+    )
+    parser.add_argument("-a", "--all", action="store_true", help="Run all scrapers")
+    args = parser.parse_args()
 
-        if choice == "5":
-            print("Bye.")
-            break
+    # If no flags provided, run interactive menu
+    if not any([args.schedule, args.transcript, args.evaluation, args.all]):
+        while True:
+            print("\n=== myUNC Scraper ===")
+            print("  1) Generate Schedule ICS")
+            print("  2) Check Transcript of Grades (notify on change)")
+            print("  3) Check Student Evaluation (notify on change)")
+            print("  4) Scrape All")
+            print("  5) Exit")
+            choice = input("\nSelect option: ").strip()
 
-        action = MENU.get(choice)
-        if action is None:
-            print("Invalid option.")
-            continue
+            if choice == "5":
+                print("Bye.")
+                break
 
-        try:
-            action[1]()
-        except Exception as e:
-            print(f"Error: {e}")
+            actions = {
+                "1": generate_schedule,
+                "2": check_transcript,
+                "3": check_evaluation,
+                "4": scrape_all,
+            }
+            action = actions.get(choice)
+            if action is None:
+                print("Invalid option.")
+                continue
+
+            try:
+                action()
+            except Exception as e:
+                print(f"Error: {e}")
+        return
+
+    # Run selected options
+    if args.all:
+        scrape_all()
+    else:
+        if args.schedule:
+            generate_schedule()
+        if args.transcript:
+            check_transcript()
+        if args.evaluation:
+            check_evaluation()
 
 
 if __name__ == "__main__":
