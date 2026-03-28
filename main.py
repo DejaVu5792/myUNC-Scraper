@@ -26,7 +26,6 @@ def check_transcript():
         send_notification(
             title="Transcript of Grades Updated",
             message=f"A change was detected in your Transcript of Grades.\n\nDiff preview:\n{diff[:1000]}",
-            priority="high",
         )
         commit_update("transcript", html)
     else:
@@ -51,7 +50,6 @@ def check_evaluation():
             send_notification(
                 title=f"{label} Updated",
                 message=f"A change was detected in {label}.\n\nDiff preview:\n{diff[:1000]}",
-                priority="high",
             )
             commit_update(key, html)
         else:

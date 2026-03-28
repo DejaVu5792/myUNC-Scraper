@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def send_notification(title: str, message: str, priority: str = "default") -> bool:
+def send_notification(title: str, message: str, priority: int = 5) -> bool:
     url = os.getenv("NTFY_URL")
     topic = os.getenv("NTFY_TOPIC")
     if not url or not topic:
@@ -21,7 +21,7 @@ def send_notification(title: str, message: str, priority: str = "default") -> bo
             data=message.encode("utf-8"),
             headers={
                 "Title": title,
-                "Priority": priority,
+                "X-Priority": str(priority),
                 "Tags": "rotating_light",
             },
             timeout=10,
