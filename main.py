@@ -9,7 +9,7 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from scraper import scrape_schedule, scrape_transcript, scrape_evaluation
 from ics_gen import generate_ics
 from change_detect import has_changed, generate_diff, commit_update, is_first_run
-from ntfy_notify import send_notification
+from notify import send_notification
 
 
 def check_transcript():
