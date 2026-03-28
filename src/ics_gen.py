@@ -14,6 +14,7 @@ DAY_MAP = {
     "Th": "TH",
     "F": "FR",
     "S": "SA",
+    "SN": "SU",
     "Su": "SU",
 }
 
@@ -73,17 +74,27 @@ def parse_days(day_str: str) -> list[str]:
     days = []
     i = 0
     while i < len(day_str):
-        # Try two-char match first
-        two = day_str[i : i + 2]
-        if two in DAY_MAP:
-            days.append(DAY_MAP[two])
-            i += 2
-        elif day_str[i] in DAY_MAP:
+        # Try two-char match first (TH, TU, etc.)
+        if i + 1 < len(day_str):
+            two = day_str[i : i + 2]
+            if two in DAY_MAP:
+                days.append(DAY_MAP[two])
+                i += 2
+                continue
+        # Single char match
+        if day_str[i] in DAY_MAP:
             days.append(DAY_MAP[day_str[i]])
             i += 1
         else:
             i += 1
-    return days
+    # Remove duplicates while preserving order
+    seen = set()
+    unique_days = []
+    for d in days:
+        if d not in seen:
+            seen.add(d)
+            unique_days.append(d)
+    return unique_days
 
 
 def normalize_time(t: str) -> str:
@@ -231,7 +242,6 @@ def find_next_weekday(start_date: date, weekday_code: str) -> date:
     days_ahead = (target - current) % 7
     return start_date + timedelta(days=days_ahead)
 
-
 def generate_ics(html: str, output_path: str = "schedule.ics") -> str:
     """Generate an ICS file from schedule HTML. Returns path to generated file."""
     entries, sem_str, year = parse_schedule_table(html)
@@ -273,21 +283,29 @@ def generate_ics(html: str, output_path: str = "schedule.ics") -> str:
             print(f"  Skipping (no days): {entry['code']} - {entry['days']}")
             continue
 
-        for day_code in day_codes:
-            event_date = find_next_weekday(start_date, day_code)
+        # Find the very first class date to use as the start of the repeating event
+        first_event_date = min(find_next_weekday(start_date, day_code) for day_code in day_codes)
 
-            event = Event()
-            event.add("summary", title)
-            event.add("location", entry["room"])
-            event.add("description", description)
-            event.add("dtstart", datetime.combine(event_date, start_t))
-            event.add("dtend", datetime.combine(event_date, end_t))
-            event.add("dtstamp", datetime.now())
+        event = Event()
+        event.add("summary", title)
+        event.add("location", entry["room"])
+        event.add("description", description)
+        event.add("dtstart", datetime.combine(first_event_date, start_t))
+        event.add("dtend", datetime.combine(first_event_date, end_t))
+        event.add("dtstamp", datetime.now())
 
-            count = ((end_date - event_date).days // 7) + 1
-            event.add("rrule", vRecur(freq="WEEKLY", count=count, byday=day_code))
+        # Use UNTIL instead of COUNT to cleanly handle multiple days until the semester ends
+        # We combine end_date with 23:59:59 to ensure the last day is fully included
+        event.add(
+            "rrule",
+            vRecur(
+                freq="WEEKLY",
+                until=datetime.combine(end_date, time(23, 59, 59)),
+                byday=day_codes
+            )
+        )
 
-            cal.add_component(event)
+        cal.add_component(event)
 
     with open(output_path, "wb") as f:
         f.write(cal.to_ical())
