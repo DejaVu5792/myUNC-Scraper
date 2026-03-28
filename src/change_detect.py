@@ -1,10 +1,22 @@
 """Hash-based change detection for scraped pages."""
 
 import hashlib
+import re
 import difflib
 from pathlib import Path
 
-DATA_DIR = Path(__file__).parent / "data"
+DATA_DIR = Path(__file__).parent.parent / "data"
+
+
+def normalize_content(text: str) -> str:
+    """Remove dynamic content before hashing."""
+    text = re.sub(r"\?uid=[a-f0-9]+", "", text)
+    text = re.sub(r"\?t=\d+", "", text)
+    text = re.sub(r"__EVENTVALIDATION[^<]*", "", text)
+    text = re.sub(r"__VIEWSTATE[^<]*", "", text)
+    text = re.sub(r"__EVENTTARGET[^<]*", "", text)
+    text = re.sub(r"__LASTFOCUS[^<]*", "", text)
+    return text
 
 
 def ensure_data_dir() -> None:
@@ -12,7 +24,8 @@ def ensure_data_dir() -> None:
 
 
 def content_hash(text: str) -> str:
-    return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    normalized = normalize_content(text)
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def get_stored_hash(name: str) -> str | None:
