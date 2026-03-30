@@ -10,12 +10,11 @@ sys.path.insert(0, str(Path(__file__).parent / "src"))
 from scraper import scrape_schedule, scrape_transcript, scrape_evaluation
 from ics_gen import generate_ics
 from change_detect import (
-    has_changed,
-    generate_diff,
-    commit_update,
     is_first_run,
+    has_changed,
+    commit_update,
+    generate_diff,
     generate_diff_grades,
-    commit_update_grades,
 )
 from notify import send_notification
 
@@ -23,9 +22,8 @@ from notify import send_notification
 def check_transcript(force: bool = False):
     print("Scraping Transcript of Grades...")
     html = scrape_transcript()
-    if is_first_run("transcript"):
+    if is_first_run("transcript_grades"):
         print("First run - storing baseline for Transcript of Grades.")
-        commit_update("transcript", html)
         generate_diff_grades("transcript_grades", html)  # stores baseline
         return
     changed, diff = generate_diff_grades("transcript_grades", html)
@@ -42,7 +40,6 @@ def check_transcript(force: bool = False):
             markdown=True,
         )
         if not force:
-            commit_update("transcript", html)
             generate_diff_grades("transcript_grades", html)  # update baseline
     else:
         print("No changes detected in Transcript of Grades.")
