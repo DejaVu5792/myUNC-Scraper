@@ -9,6 +9,23 @@ from bs4 import BeautifulSoup
 DATA_DIR = Path(__file__).parent.parent / "data"
 
 
+def extract_grades_by_semester(html: str) -> dict:
+    """Extract grades tables grouped by semester."""
+    soup = BeautifulSoup(html, "html.parser")
+    semesters = {}
+
+    spans = soup.find_all("span")
+    for span in spans:
+        text = span.get_text(strip=True)
+        if "Sem." in text:
+            semester_name = text
+            table = span.find_next("table")
+            if table:
+                semesters[semester_name] = str(table)
+
+    return semesters
+
+
 def extract_grades_table(html: str) -> str:
     """Extract only the grades tables from transcript HTML."""
     soup = BeautifulSoup(html, "html.parser")
@@ -23,7 +40,25 @@ def extract_grades_table(html: str) -> str:
     if not grade_tables:
         return ""
 
-    return "\n".join(str(t) for t in grade_tables)
+    tables_html = "\n".join(str(t) for t in grade_tables)
+
+    return f"""<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Transcript of Grades</title>
+    <style>
+        table {{ border-collapse: collapse; width: 100%; margin-bottom: 20px; }}
+        th, td {{ border: 1px solid #ddd; padding: 8px; text-align: left; }}
+        th {{ background-color: #4a4a4a; color: white; }}
+        tr:nth-child(even) {{ background-color: #f2f2f2; }}
+        td.td-center {{ text-align: center; }}
+    </style>
+</head>
+<body>
+{tables_html}
+</body>
+</html>"""
 
 
 def parse_grades(grades_html: str) -> dict:
@@ -55,6 +90,57 @@ def parse_grades(grades_html: str) -> dict:
             }
 
     return grades
+
+
+def parse_semester_grades(html: str) -> dict:
+    """Parse grades grouped by semester."""
+    semesters = extract_grades_by_semester(html)
+    result = {}
+    for sem, table_html in semesters.items():
+        result[sem] = parse_grades(table_html)
+    return result
+
+
+def find_newest_semester(semesters: dict) -> str | None:
+    """Find the newest semester based on year and sem number."""
+    import re
+
+    newest = None
+    newest_year = -1
+    newest_sem = 0
+
+    for sem in semesters.keys():
+        # Parse "1st Sem. S/Y 2025-2026" or "2nd Sem. S/Y 2025-2026"
+        match = re.search(r"(\d)(?:st|nd|rd|th)\s*Sem.*S/Y\s*(\d{4})-(\d{4})", sem)
+        if match:
+            sem_num = int(match.group(1))
+            year = int(match.group(3))  # Use end year
+            if year > newest_year or (year == newest_year and sem_num > newest_sem):
+                newest_year = year
+                newest_sem = sem_num
+                newest = sem
+    return newest
+
+
+def format_semester_grades(semester_name: str, grades: dict) -> str:
+    """Format a semester's grades nicely for notification."""
+    if not grades:
+        return f"**{semester_name}**\nNo grades"
+
+    lines = [f"**{semester_name}**"]
+    lines.append("```")
+    lines.append(f"{'Subject':<35} {'MG':>5} {'FG':>5} {'Cred':>5}")
+    lines.append("-" * 55)
+
+    for key, g in grades.items():
+        title = g["title"][:30] + "..." if len(g["title"]) > 30 else g["title"]
+        mg = g["mg"] if g["mg"] else "-"
+        fg = g["fg"] if g["fg"] else "-"
+        cred = g["credits"] if g["credits"] else "-"
+        lines.append(f"{title:<35} {mg:>5} {fg:>5} {cred:>5}")
+
+    lines.append("```")
+    return "\n".join(lines)
 
 
 def format_grade_changes(old_grades: dict, new_grades: dict) -> str:
@@ -167,35 +253,82 @@ def generate_diff(name: str, new_content: str) -> str:
 
 
 def generate_diff_grades(name: str, new_html: str) -> tuple[bool, str]:
-    """Check grades table changes and generate diff. Returns (changed, formatted_diff)."""
-    new_grades = extract_grades_table(new_html)
-    old_hash = get_stored_hash(name)
+    """Check grades by semester. Returns (changed, formatted_message)."""
+    # Get semester tables from HTML
+    soup = BeautifulSoup(new_html, "html.parser")
+    semesters_raw = {}
 
-    # First run - store baseline
-    if old_hash is None:
-        store_hash(name, content_hash(new_grades))
-        store_content(name, new_grades)
+    spans = soup.find_all("span")
+    for span in spans:
+        text = span.get_text(strip=True)
+        if "Sem." in text:
+            semester_name = text
+            table = span.find_next("table")
+            if table:
+                semesters_raw[semester_name] = str(table)
+
+    # Get old semesters from stored content
+    old_html = get_stored_content(name)
+    if old_html is None:
+        # First run - store everything
+        clean_html = extract_grades_table(new_html)
+        store_content(name, clean_html)
+        for sem, table_html in semesters_raw.items():
+            store_hash(f"{name}_{sanitize_filename(sem)}", content_hash(table_html))
         return False, ""
 
-    new_hash = content_hash(new_grades)
+    # Parse old semesters
+    old_soup = BeautifulSoup(old_html, "html.parser")
+    old_spans = old_soup.find_all("span")
+    old_semesters_raw = {}
+    for span in old_spans:
+        text = span.get_text(strip=True)
+        if "Sem." in text:
+            semester_name = text
+            table = span.find_next("table")
+            if table:
+                old_semesters_raw[semester_name] = str(table)
 
-    if new_hash == old_hash:
+    # Check each semester for changes
+    changed_semesters = []
+    for sem, table_html in semesters_raw.items():
+        old_table = old_semesters_raw.get(sem, "")
+        if content_hash(table_html) != content_hash(old_table):
+            changed_semesters.append(sem)
+
+    if not changed_semesters:
+        # Update hashes anyway
+        for sem, table_html in semesters_raw.items():
+            store_hash(f"{name}_{sanitize_filename(sem)}", content_hash(table_html))
         return False, ""
 
-    old_grades = get_stored_content(name)
-    if old_grades is None:
-        return True, "No previous grades to compare."
+    # Find newest semester from changed ones
+    newest = find_newest_semester({s: True for s in changed_semesters})
 
-    old_grades_parsed = parse_grades(old_grades)
-    new_grades_parsed = parse_grades(new_grades)
+    if not newest:
+        newest = changed_semesters[0]
 
-    formatted = format_grade_changes(old_grades_parsed, new_grades_parsed)
-    return True, formatted
+    # Get old and new grades for newest semester
+    new_grades = parse_grades(semesters_raw.get(newest, ""))
+    old_grades = parse_grades(old_semesters_raw.get(newest, ""))
+
+    # Use the old format (new + changed grades)
+    formatted = format_grade_changes(old_grades, new_grades)
+
+    # Add semester header
+    final_message = f"**{newest}**\n\n{formatted}"
+
+    # Update hashes and store clean grades-only content
+    for sem, table_html in semesters_raw.items():
+        store_hash(f"{name}_{sanitize_filename(sem)}", content_hash(table_html))
+
+    # Store clean HTML with only grades tables for browser viewing
+    clean_html = extract_grades_table(new_html)
+    store_content(name, clean_html)
+
+    return True, final_message
 
 
-def commit_update_grades(name: str, html: str) -> None:
-    """Store grades table hash and content."""
-    grades = extract_grades_table(html)
-    h = content_hash(grades)
-    store_hash(name, h)
-    store_content(name, grades)
+def sanitize_filename(s: str) -> str:
+    """Sanitize string for use in filename."""
+    return re.sub(r"[^\w\s-]", "", s).replace(" ", "_")

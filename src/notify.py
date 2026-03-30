@@ -9,7 +9,11 @@ load_dotenv()
 
 
 def send_notification(
-    title: str, message: str, priority: int = None, markdown: bool = False
+    title: str,
+    message: str,
+    priority: int = None,
+    markdown: bool = False,
+    attach_url: str = None,
 ) -> bool:
     priority = priority or int(os.getenv("NOTIFY_PRIORITY", "5"))
     sent_any = False
@@ -27,6 +31,8 @@ def send_notification(
         }
         if markdown:
             headers["Markdown"] = "yes"
+        if attach_url:
+            headers["X-Attach"] = attach_url
         try:
             resp = requests.post(
                 endpoint,
@@ -36,6 +42,8 @@ def send_notification(
             )
             resp.raise_for_status()
             print(f"Notification sent (NTFY): {title}")
+            if attach_url:
+                print(f"  Attached: {attach_url}")
             sent_any = True
         except requests.RequestException as e:
             print(f"NTFY notification failed: {e}")

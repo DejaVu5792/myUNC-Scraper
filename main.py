@@ -7,7 +7,11 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
-from scraper import scrape_schedule, scrape_transcript, scrape_evaluation
+from scraper import (
+    scrape_schedule,
+    scrape_transcript,
+    scrape_evaluation,
+)
 from ics_gen import generate_ics
 from change_detect import (
     is_first_run,
