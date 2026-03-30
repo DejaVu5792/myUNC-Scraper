@@ -4,8 +4,26 @@ import hashlib
 import re
 import difflib
 from pathlib import Path
+from bs4 import BeautifulSoup
 
 DATA_DIR = Path(__file__).parent.parent / "data"
+
+
+def extract_grades_table(html: str) -> str:
+    """Extract only the grades tables from transcript HTML."""
+    soup = BeautifulSoup(html, "html.parser")
+    tables = soup.find_all("table")
+
+    grade_tables = []
+    for table in tables:
+        headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+        if "mg" in headers and "fg" in headers:
+            grade_tables.append(table)
+
+    if not grade_tables:
+        return ""
+
+    return "\n".join(str(t) for t in grade_tables)
 
 
 def normalize_content(text: str) -> str:
@@ -85,3 +103,36 @@ def generate_diff(name: str, new_content: str) -> str:
         old_lines, new_lines, fromfile="previous", tofile="current", lineterm=""
     )
     return "".join(diff)
+
+
+def generate_diff_grades(name: str, new_html: str) -> tuple[bool, str]:
+    """Check grades table changes and generate diff. Returns (changed, diff_str)."""
+    new_grades = extract_grades_table(new_html)
+    old_hash = get_stored_hash(name)
+
+    if old_hash is None:
+        return False, ""
+
+    new_hash = content_hash(new_grades)
+
+    if new_hash == old_hash:
+        return False, ""
+
+    old_grades = get_stored_content(name)
+    if old_grades is None:
+        return True, "No previous grades to compare."
+
+    old_lines = old_grades.splitlines(keepends=True)
+    new_lines = new_grades.splitlines(keepends=True)
+    diff = difflib.unified_diff(
+        old_lines, new_lines, fromfile="previous", tofile="current", lineterm=""
+    )
+    return True, "".join(diff)
+
+
+def commit_update_grades(name: str, html: str) -> None:
+    """Store grades table hash and content."""
+    grades = extract_grades_table(html)
+    h = content_hash(grades)
+    store_hash(name, h)
+    store_content(name, grades)

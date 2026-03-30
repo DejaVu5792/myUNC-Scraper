@@ -2,13 +2,21 @@
 
 import argparse
 import sys
+import traceback
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
 
 from scraper import scrape_schedule, scrape_transcript, scrape_evaluation
 from ics_gen import generate_ics
-from change_detect import has_changed, generate_diff, commit_update, is_first_run
+from change_detect import (
+    has_changed,
+    generate_diff,
+    commit_update,
+    is_first_run,
+    generate_diff_grades,
+    commit_update_grades,
+)
 from notify import send_notification
 
 
@@ -18,16 +26,18 @@ def check_transcript():
     if is_first_run("transcript"):
         print("First run - storing baseline for Transcript of Grades.")
         commit_update("transcript", html)
+        commit_update_grades("transcript_grades", html)
         return
-    if has_changed("transcript", html):
+    changed, diff = generate_diff_grades("transcript_grades", html)
+    if changed:
         print("Change detected in Transcript of Grades!")
-        diff = generate_diff("transcript", html)
         print(f"Diff length: {len(diff)} chars")
         send_notification(
             title="Transcript of Grades Updated",
             message=f"A change was detected in your Transcript of Grades.\n\nDiff preview:\n{diff[:1000]}",
         )
         commit_update("transcript", html)
+        commit_update_grades("transcript_grades", html)
     else:
         print("No changes detected in Transcript of Grades.")
 
@@ -70,6 +80,16 @@ def scrape_all():
     generate_schedule()
     check_transcript()
     check_evaluation()
+
+
+def notify_error(task_name: str, error: Exception) -> None:
+    """Send error notification."""
+    tb = traceback.format_exception(type(error), error, error.__traceback__)
+    error_msg = "".join(tb)
+    send_notification(
+        title=f"UNC Scraper Error - {task_name}",
+        message=f"Error in {task_name}:\n{type(error).__name__}: {error}\n\n{error_msg[:1500]}",
+    )
 
 
 def main():
@@ -121,19 +141,36 @@ def main():
             try:
                 action()
             except Exception as e:
+                notify_error(choice, e)
                 print(f"Error: {e}")
         return
 
     # Run selected options
     if args.all:
-        scrape_all()
+        try:
+            scrape_all()
+        except Exception as e:
+            notify_error("scrape_all", e)
+            raise
     else:
         if args.schedule:
-            generate_schedule()
+            try:
+                generate_schedule()
+            except Exception as e:
+                notify_error("schedule", e)
+                raise
         if args.transcript:
-            check_transcript()
+            try:
+                check_transcript()
+            except Exception as e:
+                notify_error("transcript", e)
+                raise
         if args.evaluation:
-            check_evaluation()
+            try:
+                check_evaluation()
+            except Exception as e:
+                notify_error("evaluation", e)
+                raise
 
 
 if __name__ == "__main__":
