@@ -20,7 +20,7 @@ from change_detect import (
 from notify import send_notification
 
 
-def check_transcript():
+def check_transcript(force: bool = False):
     print("Scraping Transcript of Grades...")
     html = scrape_transcript()
     if is_first_run("transcript"):
@@ -29,20 +29,25 @@ def check_transcript():
         commit_update_grades("transcript_grades", html)
         return
     changed, diff = generate_diff_grades("transcript_grades", html)
-    if changed:
-        print("Change detected in Transcript of Grades!")
+    if changed or force:
+        print(
+            "Change detected in Transcript of Grades!"
+            if changed
+            else "Force: simulating change."
+        )
         print(f"Diff length: {len(diff)} chars")
         send_notification(
             title="Transcript of Grades Updated",
             message=f"A change was detected in your Transcript of Grades.\n\nDiff preview:\n{diff[:1000]}",
         )
-        commit_update("transcript", html)
-        commit_update_grades("transcript_grades", html)
+        if not force:
+            commit_update("transcript", html)
+            commit_update_grades("transcript_grades", html)
     else:
         print("No changes detected in Transcript of Grades.")
 
 
-def check_evaluation():
+def check_evaluation(force: bool = False):
     print("Scraping Student Evaluation (all year levels)...")
     results = scrape_evaluation()
     for level, html in results.items():
@@ -53,15 +58,20 @@ def check_evaluation():
             print(f"    First run - storing baseline.")
             commit_update(key, html)
             continue
-        if has_changed(key, html):
-            print(f"    Change detected!")
+        if has_changed(key, html) or force:
+            print(
+                f"    Change detected!"
+                if has_changed(key, html)
+                else "    Force: simulating change."
+            )
             diff = generate_diff(key, html)
             print(f"    Diff length: {len(diff)} chars")
             send_notification(
                 title=f"{label} Updated",
                 message=f"A change was detected in {label}.\n\nDiff preview:\n{diff[:1000]}",
             )
-            commit_update(key, html)
+            if not force:
+                commit_update(key, html)
         else:
             print(f"    No changes detected.")
 
@@ -76,10 +86,10 @@ def generate_schedule():
         print("Could not generate schedule ICS.")
 
 
-def scrape_all():
+def scrape_all(force: bool = False):
     generate_schedule()
-    check_transcript()
-    check_evaluation()
+    check_transcript(force=force)
+    check_evaluation(force=force)
 
 
 def notify_error(task_name: str, error: Exception) -> None:
@@ -110,6 +120,12 @@ def main():
         help="Check Student Evaluation (notify on change)",
     )
     parser.add_argument("-a", "--all", action="store_true", help="Run all scrapers")
+    parser.add_argument(
+        "-f",
+        "--force",
+        action="store_true",
+        help="Force notification (simulate change detected)",
+    )
     args = parser.parse_args()
 
     # If no flags provided, run interactive menu
@@ -148,7 +164,7 @@ def main():
     # Run selected options
     if args.all:
         try:
-            scrape_all()
+            scrape_all(force=args.force)
         except Exception as e:
             notify_error("scrape_all", e)
             raise
@@ -161,13 +177,13 @@ def main():
                 raise
         if args.transcript:
             try:
-                check_transcript()
+                check_transcript(force=args.force)
             except Exception as e:
                 notify_error("transcript", e)
                 raise
         if args.evaluation:
             try:
-                check_evaluation()
+                check_evaluation(force=args.force)
             except Exception as e:
                 notify_error("evaluation", e)
                 raise
