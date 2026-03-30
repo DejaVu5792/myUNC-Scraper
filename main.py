@@ -26,7 +26,7 @@ def check_transcript(force: bool = False):
     if is_first_run("transcript"):
         print("First run - storing baseline for Transcript of Grades.")
         commit_update("transcript", html)
-        commit_update_grades("transcript_grades", html)
+        generate_diff_grades("transcript_grades", html)  # stores baseline
         return
     changed, diff = generate_diff_grades("transcript_grades", html)
     if changed or force:
@@ -35,14 +35,15 @@ def check_transcript(force: bool = False):
             if changed
             else "Force: simulating change."
         )
-        print(f"Diff length: {len(diff)} chars")
+        print(f"Diff preview: {diff[:200]}...")
         send_notification(
             title="Transcript of Grades Updated",
-            message=f"A change was detected in your Transcript of Grades.\n\nDiff preview:\n{diff[:1000]}",
+            message=diff[:2000],
+            markdown=True,
         )
         if not force:
             commit_update("transcript", html)
-            commit_update_grades("transcript_grades", html)
+            generate_diff_grades("transcript_grades", html)  # update baseline
     else:
         print("No changes detected in Transcript of Grades.")
 

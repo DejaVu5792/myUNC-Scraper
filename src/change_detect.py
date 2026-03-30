@@ -26,6 +26,67 @@ def extract_grades_table(html: str) -> str:
     return "\n".join(str(t) for t in grade_tables)
 
 
+def parse_grades(grades_html: str) -> dict:
+    """Parse grades HTML into a dict keyed by subject (code + title)."""
+    soup = BeautifulSoup(grades_html, "html.parser")
+    tables = soup.find_all("table")
+
+    grades = {}
+    for table in tables:
+        rows = table.find_all("tr")[1:]  # Skip header
+        for row in rows:
+            cells = row.find_all("td")
+            if len(cells) < 6:
+                continue
+            code = cells[1].get_text(strip=True)  # Subject column (e.g., BIT121L)
+            title = cells[2].get_text(strip=True)  # Descriptive Title
+            if not code:
+                continue
+            mg = cells[3].get_text(strip=True)
+            fg = cells[4].get_text(strip=True)
+            credits = cells[5].get_text(strip=True)
+            key = f"{code} - {title}"
+            grades[key] = {
+                "mg": mg,
+                "fg": fg,
+                "credits": credits,
+                "code": code,
+                "title": title,
+            }
+
+    return grades
+
+
+def format_grade_changes(old_grades: dict, new_grades: dict) -> str:
+    """Format changed grades into Markdown notification message."""
+    new_lines = []
+    changed_lines = []
+
+    for key, new in new_grades.items():
+        old = old_grades.get(key)
+        if old is None:
+            fg = new["fg"] if new["fg"] else "-"
+            new_lines.append(
+                f"- {new['title']}: **{new['mg']}** **{fg}** {new['credits']}"
+            )
+        elif old["mg"] != new["mg"] or old["fg"] != new["fg"]:
+            mg_old = old["mg"] if old["mg"] else "-"
+            mg_new = new["mg"] if new["mg"] else "-"
+            mg = f"{mg_old} → **{mg_new}**"
+            fg_old = old["fg"] if old["fg"] else "-"
+            fg_new = new["fg"] if new["fg"] else "-"
+            fg = f"{fg_old} → **{fg_new}**"
+            changed_lines.append(f"- {new['title']}: {mg} {fg} {new['credits']}")
+
+    parts = []
+    if new_lines:
+        parts.append("**New Grades**\n" + "\n".join(new_lines))
+    if changed_lines:
+        parts.append("**Changed**\n" + "\n".join(changed_lines))
+
+    return "\n\n".join(parts) if parts else "No grade changes"
+
+
 def normalize_content(text: str) -> str:
     """Remove dynamic content before hashing."""
     text = re.sub(r"\?uid=[a-f0-9]+", "", text)
@@ -106,11 +167,14 @@ def generate_diff(name: str, new_content: str) -> str:
 
 
 def generate_diff_grades(name: str, new_html: str) -> tuple[bool, str]:
-    """Check grades table changes and generate diff. Returns (changed, diff_str)."""
+    """Check grades table changes and generate diff. Returns (changed, formatted_diff)."""
     new_grades = extract_grades_table(new_html)
     old_hash = get_stored_hash(name)
 
+    # First run - store baseline
     if old_hash is None:
+        store_hash(name, content_hash(new_grades))
+        store_content(name, new_grades)
         return False, ""
 
     new_hash = content_hash(new_grades)
@@ -122,12 +186,11 @@ def generate_diff_grades(name: str, new_html: str) -> tuple[bool, str]:
     if old_grades is None:
         return True, "No previous grades to compare."
 
-    old_lines = old_grades.splitlines(keepends=True)
-    new_lines = new_grades.splitlines(keepends=True)
-    diff = difflib.unified_diff(
-        old_lines, new_lines, fromfile="previous", tofile="current", lineterm=""
-    )
-    return True, "".join(diff)
+    old_grades_parsed = parse_grades(old_grades)
+    new_grades_parsed = parse_grades(new_grades)
+
+    formatted = format_grade_changes(old_grades_parsed, new_grades_parsed)
+    return True, formatted
 
 
 def commit_update_grades(name: str, html: str) -> None:

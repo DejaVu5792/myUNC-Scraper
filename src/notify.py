@@ -8,7 +8,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-def send_notification(title: str, message: str, priority: int = None) -> bool:
+def send_notification(
+    title: str, message: str, priority: int = None, markdown: bool = False
+) -> bool:
     priority = priority or int(os.getenv("NOTIFY_PRIORITY", "5"))
     sent_any = False
 
@@ -18,15 +20,18 @@ def send_notification(title: str, message: str, priority: int = None) -> bool:
 
     if ntfy_url and ntfy_topic:
         endpoint = f"{ntfy_url.rstrip('/')}/{ntfy_topic}"
+        headers = {
+            "Title": title,
+            "X-Priority": str(priority),
+            "Tags": "rotating_light",
+        }
+        if markdown:
+            headers["Markdown"] = "yes"
         try:
             resp = requests.post(
                 endpoint,
                 data=message.encode("utf-8"),
-                headers={
-                    "Title": title,
-                    "X-Priority": str(priority),
-                    "Tags": "rotating_light",
-                },
+                headers=headers,
                 timeout=10,
             )
             resp.raise_for_status()
