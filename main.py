@@ -131,6 +131,7 @@ def generate_oes_block_schedules():
             "period",
             message="Select prospectus period",
             choices=choices,
+            carousel=True,
         )
     ]
     try:
@@ -164,6 +165,71 @@ def notify_error(task_name: str, error: Exception) -> None:
         title=f"UNC Scraper Error - {task_name}",
         message=f"Error in {task_name}:\n{type(error).__name__}: {error}\n\n{error_msg[:1500]}",
     )
+# The user wants to scrape multiple tasks selectively using a checkbox prompt.
+def scrape_multiple():
+    questions = [
+        inquirer.Checkbox(
+            "tasks",
+            message="Select scrapers to run (Space to toggle, Enter to run, Esc/Empty to go back)",
+            choices=[
+                ("Check myUNC Transcript of Grades", "2"),
+                ("Check myUNC Student Evaluation", "3"),
+                ("Export OES Available SCIS Subjects (CSV)", "6"),
+            ],
+            carousel=True,
+        )
+    ]
+    try:
+        answers = inquirer.prompt(questions, theme=BlueComposure())
+        if not answers:
+            return  # Escape key pressed
+            
+        selected = answers.get("tasks", [])
+        if not selected:
+            return  # Nothing selected, go back cleanly
+        actions = {
+            "1": (generate_schedule, "Generate myUNC Schedule (ICS)"),
+            "2": (check_transcript, "Check myUNC Transcript of Grades"),
+            "3": (check_evaluation, "Check myUNC Student Evaluation"),
+            "5": (generate_oes_schedule, "Generate OES Enrolled Premat Schedule (ICS)"),
+            "6": (generate_oes_available_subjects, "Export OES Available SCIS Subjects (CSV)"),
+            "7": (generate_oes_block_schedules, "Generate OES Block Schedules (PNG)"),
+        }
+        
+        for task_id in selected:
+            action, title = actions[task_id]
+            print("\n" + "═" * 50)
+            print(f" ▶ Running: {title}")
+            print("═" * 50)
+            try:
+                action()
+            except Exception as sub_err:
+                print(f" ✘ Sub-task '{title}' failed: {sub_err}")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
+# The user wants log outputs encased in a styled box.
+
+def execute_with_ui(action, title):
+    import os
+    print("\n" + "┏" + "━" * 68 + "┓")
+    print(f"┃ {title.ljust(66)} ┃")
+    print("┗" + "━" * 68 + "┛\n")
+    
+    try:
+        action()
+        print("\n" + "━" * 70)
+        print(" ✔ Task finished successfully.")
+    except Exception as e:
+        print("\n" + "━" * 70)
+        print(f" ✘ Task failed with error: {e}")
+        raise e
+    finally:
+        print("━" * 70)
+        input("\nPress Enter to return to main menu...")
+        print("\n" * 2) # Spacer instead of screen clear
+
 
 
 def main():
@@ -209,9 +275,10 @@ def main():
                         ("Generate myUNC Schedule (ICS)", "1"),
                         ("Generate OES Enrolled Premat Schedule (ICS)", "5"),
                         ("Generate OES Block Schedules (PNG)", "7"),
-                        ("Scrape All", "4"),
+                        ("Scrape Multiple", "4"),
                         ("Exit", "8"),
                     ],
+                    carousel=True,
                 )
             ]
             try:
@@ -224,20 +291,22 @@ def main():
                     break
 
                 actions = {
-                    "1": generate_schedule,
-                    "2": check_transcript,
-                    "3": check_evaluation,
-                    "4": scrape_all,
-                    "5": generate_oes_schedule,
-                    "6": generate_oes_available_subjects,
-                    "7": generate_oes_block_schedules,
+                    "1": (generate_schedule, "Generate myUNC Schedule (ICS)"),
+                    "2": (check_transcript, "Check myUNC Transcript of Grades"),
+                    "3": (check_evaluation, "Check myUNC Student Evaluation"),
+                    "4": (scrape_multiple, "Scrape Multiple"),
+                    "5": (generate_oes_schedule, "Generate OES Enrolled Premat Schedule (ICS)"),
+                    "6": (generate_oes_available_subjects, "Export OES Available SCIS Subjects (CSV)"),
+                    "7": (generate_oes_block_schedules, "Generate OES Block Schedules (PNG)"),
                 }
-                action = actions.get(choice)
-                if action is None:
+                action_info = actions.get(choice)
+
+                if action_info is None:
                     print("Invalid option.")
                     continue
 
-                action()
+                action, title = action_info
+                execute_with_ui(action, title)
             except KeyboardInterrupt:
                 print("\nBye.")
                 break
