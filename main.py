@@ -26,6 +26,9 @@ from change_detect import (
     generate_diff_grades,
 )
 from notify import send_notification
+import block_sched_gen
+import inquirer
+from inquirer.themes import BlueComposure
 
 
 def check_transcript(force: bool = False):
@@ -113,10 +116,44 @@ def generate_oes_available_subjects():
         print("Could not export available subjects.")
 
 
+def generate_oes_block_schedules():
+    print("Generating OES Block Schedules...")
+    periods = block_sched_gen.get_prospectus_periods("it_prospectus.csv")
+    if not periods:
+        print("Error: Could not read prospectus periods. Make sure it_prospectus.csv is available.")
+        return
+        
+    choices = [(f"{yr} - {sem}", (yr, sem)) for yr, sem in periods]
+    choices.append(("Back to main menu", None))
+    
+    questions = [
+        inquirer.List(
+            "period",
+            message="Select prospectus period",
+            choices=choices,
+        )
+    ]
+    try:
+        answers = inquirer.prompt(questions, theme=BlueComposure())
+        if not answers or answers.get("period") is None:
+            return
+            
+        yr, sem = answers["period"]
+        success = block_sched_gen.generate_schedules_for_period(yr, sem, "it_prospectus.csv", "available_subjects.csv")
+        if success:
+            print(f"Done. Schedules generated in 'output/' folder.")
+        else:
+            print("Could not generate block schedules.")
+    except Exception as e:
+        print(f"Error: {e}")
+
+
 def scrape_all(force: bool = False):
     generate_schedule()
     check_transcript(force=force)
     check_evaluation(force=force)
+    generate_oes_schedule()
+    generate_oes_available_subjects()
 
 
 def notify_error(task_name: str, error: Exception) -> None:
@@ -149,6 +186,7 @@ def main():
     parser.add_argument("-a", "--all", action="store_true", help="Run all scrapers")
     parser.add_argument("--oes-schedule", action="store_true", help="Generate OES Enrolled Schedule ICS")
     parser.add_argument("--oes-available", action="store_true", help="Export OES Available Subjects to CSV")
+    parser.add_argument("--oes-block-sched", action="store_true", help="Generate OES Block Schedules (from CSV & Prospectus)")
     parser.add_argument(
         "-f",
         "--force",
@@ -158,37 +196,51 @@ def main():
     args = parser.parse_args()
 
     # If no flags provided, run interactive menu
-    if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available]):
+    if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available, args.oes_block_sched]):
         while True:
-            print("\n=== myUNC Scraper ===")
-            print("  1) Generate Schedule ICS")
-            print("  2) Check Transcript of Grades (notify on change)")
-            print("  3) Check Student Evaluation (notify on change)")
-            print("  4) Scrape All")
-            print("  5) Generate OES Enrolled Schedule ICS")
-            print("  6) Export OES Available Subjects to CSV")
-            print("  7) Exit")
-            choice = input("\nSelect option: ").strip()
-
-            if choice == "7":
-                print("Bye.")
-                break
-
-            actions = {
-                "1": generate_schedule,
-                "2": check_transcript,
-                "3": check_evaluation,
-                "4": scrape_all,
-                "5": generate_oes_schedule,
-                "6": generate_oes_available_subjects,
-            }
-            action = actions.get(choice)
-            if action is None:
-                print("Invalid option.")
-                continue
-
+            questions = [
+                inquirer.List(
+                    "choice",
+                    message="=== myUNC Scraper ===",
+                    choices=[
+                        ("Check myUNC Transcript of Grades (notify on change)", "2"),
+                        ("Check myUNC Student Evaluation (notify on change)", "3"),
+                        ("Export OES Available SCIS Subjects (CSV)", "6"),
+                        ("Generate myUNC Schedule (ICS)", "1"),
+                        ("Generate OES Enrolled Premat Schedule (ICS)", "5"),
+                        ("Generate OES Block Schedules (PNG)", "7"),
+                        ("Scrape All", "4"),
+                        ("Exit", "8"),
+                    ],
+                )
+            ]
             try:
+                answers = inquirer.prompt(questions, theme=BlueComposure())
+                if not answers:
+                    break
+                choice = answers.get("choice")
+                if choice == "8":
+                    print("Bye.")
+                    break
+
+                actions = {
+                    "1": generate_schedule,
+                    "2": check_transcript,
+                    "3": check_evaluation,
+                    "4": scrape_all,
+                    "5": generate_oes_schedule,
+                    "6": generate_oes_available_subjects,
+                    "7": generate_oes_block_schedules,
+                }
+                action = actions.get(choice)
+                if action is None:
+                    print("Invalid option.")
+                    continue
+
                 action()
+            except KeyboardInterrupt:
+                print("\nBye.")
+                break
             except Exception as e:
                 notify_error(choice, e)
                 print(f"Error: {e}")
@@ -231,6 +283,12 @@ def main():
                 generate_oes_available_subjects()
             except Exception as e:
                 notify_error("oes_available", e)
+                raise
+        if args.oes_block_sched:
+            try:
+                generate_oes_block_schedules()
+            except Exception as e:
+                notify_error("oes_block_sched", e)
                 raise
 
 
