@@ -190,7 +190,6 @@ def get_available_subjects(page: Page) -> list[dict]:
         
     page.wait_for_load_state("networkidle")
     print(f"After Request page NEXT Click URL: {page.url}")
-    page.screenshot(path="debug_after_next.png")
     
     # View course offerings
     page.get_by_role("button", name="View course offerings").click(timeout=5000)
@@ -213,7 +212,6 @@ def get_available_subjects(page: Page) -> list[dict]:
         frame.select_option("#enrollmentHolder_cboDept", index=4)
         frame.wait_for_load_state("networkidle")
         page.wait_for_timeout(2000) # Wait for AJAX postback to complete
-        page.screenshot(path="debug4_after_dept.png")
     except Exception as e:
         print(f"Error selecting dept: {e}")
         
@@ -222,12 +220,12 @@ def get_available_subjects(page: Page) -> list[dict]:
         frame.locator('#enrollmentHolder_rptLinks_lnkLetter_0').wait_for(state="attached", timeout=10000)
     except Exception as e:
         print("Could not find the letter links for subject filtering inside the iframe.")
-        page.screenshot(path="debug5_error_letters.png")
         
     all_subjects = []
     
     # Iterate through A-Z (0-25) inside the iframe
     for i in range(26):
+        letter = chr(ord('A') + i)
         try:
             letter_locator = frame.locator(f'#enrollmentHolder_rptLinks_lnkLetter_{i}')
             # Check if it exists and wait for it
@@ -238,10 +236,10 @@ def get_available_subjects(page: Page) -> list[dict]:
                 
                 html = frame.content()
                 subjects = parse_available_subjects(html)
-                print(f"Scraped {len(subjects)} subjects for letter index {i}")
+                print(f"Scraped {len(subjects)} subjects for letter {letter}")
                 all_subjects.extend(subjects)
         except Exception as e:
-            print(f"Error scraping letter index {i}: {e}")
+            print(f"Error scraping letter {letter}: {e}")
             
     return all_subjects
 
