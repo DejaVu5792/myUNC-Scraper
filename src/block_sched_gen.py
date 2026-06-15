@@ -249,3 +249,140 @@ def generate_schedules_for_period(year_level, semester, prospectus_path="it_pros
     plt.close()
     print(f"Saved complete master schedule canvas to '{master_path}'")
     return True
+
+
+def generate_ics_schedules_for_period(year_level, semester, prospectus_path="it_prospectus.csv", avail_path="available_subjects.csv", output_dir="output"):
+    if not os.path.exists(avail_path):
+        print(f"Error: {avail_path} does not exist. Please export OES available subjects to CSV first.")
+        return False
+        
+    prop_df = pd.read_csv(prospectus_path)
+    avail_df = pd.read_csv(avail_path)
+    
+    period_prop = prop_df[(prop_df['year level'] == year_level) & (prop_df['semester'] == semester)]
+    prop_descriptions = period_prop['subject description'].tolist()
+    
+    print(f"\nMatching available subjects for {year_level} - {semester}...")
+    
+    matched_rows = []
+    for idx, row in avail_df.iterrows():
+        title = row['title']
+        for desc in prop_descriptions:
+            if titles_match(desc, title):
+                matched_rows.append(row)
+                break
+                
+    if not matched_rows:
+        print("No matching subjects found in available subjects for the selected period.")
+        return False
+        
+    matched_df = pd.DataFrame(matched_rows)
+    schedule = []
+    time_regex = r'(\d{1,2}:\d{2}\s*[AP]M)\s*[-–]\s*(\d{1,2}:\d{2}\s*[AP]M)'
+    
+    for idx, row in matched_df.iterrows():
+        sched_text = str(row['schedule']).strip()
+        time_match = re.search(time_regex, sched_text, re.IGNORECASE)
+        if not time_match:
+            continue
+        start_t, end_t = time_match.groups()
+        
+        time_str = sched_text[time_match.start():time_match.end()]
+        time_idx = sched_text.find(time_str)
+        day_str = sched_text[time_idx + len(time_str):].strip()
+        
+        days = split_days(day_str)
+        block = get_block_name(row['course_no'])
+        
+        for day in days:
+            schedule.append({
+                'code': row['code'],
+                'course_no': row['course_no'],
+                'block': block,
+                'title': row['title'],
+                'day': day,
+                'start': start_t,
+                'end': end_t,
+                'room': row['room'] if pd.notna(row['room']) else "",
+                'teacher': row['teacher'] if pd.notna(row['teacher']) else "",
+                'start_hours': time_to_hours(start_t),
+                'end_hours': time_to_hours(end_t)
+            })
+            
+    if not schedule:
+        print("No valid schedule slots parsed from matching subjects.")
+        return False
+        
+    df = pd.DataFrame(schedule)
+    blocks = sorted(df['block'].unique())
+    
+    os.makedirs(output_dir, exist_ok=True)
+    
+    # Import necessary modules from ics_gen or define locally
+    from ics_gen import get_semester_dates, parse_time, find_next_weekday
+    from icalendar import Calendar, Event, vRecur
+    
+    # Use current year for dates (matching the default logic of ics_gen.py)
+    sy_start = datetime.datetime.now().year
+            
+    start_date, end_date = get_semester_dates(sy_start, semester)
+    
+    day_rrule_map = {
+        'M': 'MO',
+        'T': 'TU',
+        'W': 'WE',
+        'TH': 'TH',
+        'F': 'FR',
+        'S': 'SA'
+    }
+    
+    for block in blocks:
+        block_df = df[df['block'] == block]
+        cal = Calendar()
+        cal.add("prodid", "-//myUNC Scraper//EN")
+        cal.add("version", "2.0")
+        cal.add("calname", f"OES Block Schedule - {block}")
+        
+        grouped = block_df.groupby(['code', 'course_no', 'title', 'room', 'teacher', 'start', 'end'])
+        
+        for (code, course_no, title, room, teacher, start_t_str, end_t_str), group in grouped:
+            event_title = f"{title} - {code}"
+            description = f"Course: {course_no}\nTeacher: {teacher}"
+            
+            parsed_time = parse_time(f"{start_t_str}-{end_t_str}")
+            if not parsed_time:
+                continue
+            start_t, end_t = parsed_time
+            
+            day_codes = [day_rrule_map[d] for d in group['day'].tolist() if d in day_rrule_map]
+            if not day_codes:
+                continue
+                
+            first_event_date = min(find_next_weekday(start_date, day_code) for day_code in day_codes)
+            
+            event = Event()
+            event.add("summary", event_title)
+            event.add("location", room)
+            event.add("description", description)
+            event.add("dtstart", datetime.datetime.combine(first_event_date, start_t))
+            event.add("dtend", datetime.datetime.combine(first_event_date, end_t))
+            event.add("dtstamp", datetime.datetime.now())
+            
+            event.add(
+                "rrule",
+                vRecur(
+                    freq="WEEKLY",
+                    until=datetime.datetime.combine(end_date, datetime.time(23, 59, 59)),
+                    byday=day_codes
+                )
+            )
+            cal.add_component(event)
+            
+        safe_filename = f"schedule_block_{block.replace(' ', '_')}.ics"
+        full_path = os.path.join(output_dir, safe_filename)
+        with open(full_path, "wb") as f:
+            f.write(cal.to_ical())
+        print(f"Saved block ICS file to '{full_path}'")
+        
+    return True
+

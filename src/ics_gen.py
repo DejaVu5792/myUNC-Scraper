@@ -28,9 +28,9 @@ def get_semester_dates(year: int, semester: str) -> tuple[date, date]:
     S/Y 2025-2026, 1st Sem -> Aug 2025 - Dec 2025
     S/Y 2025-2026, 2nd Sem -> Jan 2026 - May 2026
     """
-    if "1st" in semester:
+    if "1st" in semester or "First" in semester:
         return (date(year, 8, 1), date(year, 12, 25))
-    elif "2nd" in semester:
+    elif "2nd" in semester or "Second" in semester:
         return (date(year + 1, 1, 1), date(year + 1, 5, 29))
     else:
         # Summer - short term, 2 months
@@ -134,7 +134,14 @@ def parse_schedule_column(schedule_text: str) -> tuple[str, str] | None:
     return None
 
 
+def cleanup_1enrl(val: str) -> str:
+    if not val:
+        return ""
+    return val.replace("1ENRL", "").strip(" -")
+
+
 def parse_schedule_table(html: str) -> tuple[list[dict], str, int]:
+
     """Parse schedule HTML.
 
     Returns (entries, semester_str, school_year_start).
@@ -202,9 +209,9 @@ def parse_schedule_table(html: str) -> tuple[list[dict], str, int]:
 
         time_str, days_str = parsed
 
-        code = get_cell(cells, "code")
-        course_no = get_cell(cells, "course_no")
-        subject = get_cell(cells, "subject")
+        code = cleanup_1enrl(get_cell(cells, "code"))
+        course_no = cleanup_1enrl(get_cell(cells, "course_no"))
+        subject = cleanup_1enrl(get_cell(cells, "subject"))
 
         if not code:
             code = last_code
@@ -228,10 +235,11 @@ def parse_schedule_table(html: str) -> tuple[list[dict], str, int]:
                 "subject": subject,
                 "days": days_str,
                 "time": time_str,
-                "room": get_cell(cells, "room"),
-                "teacher": get_cell(cells, "teacher"),
+                "room": cleanup_1enrl(get_cell(cells, "room")),
+                "teacher": cleanup_1enrl(get_cell(cells, "teacher")),
             }
         )
+
 
     return entries, sem_str, year
 
