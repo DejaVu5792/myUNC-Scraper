@@ -146,13 +146,15 @@ def parse_schedule_table(html: str) -> tuple[list[dict], str, int]:
     entries = []
 
     # Find table with headers: Code, Course No, Description, Unit, Schedule, Room, Teacher
-    tables = soup.find_all("table")
-    target_table = None
-    for table in tables:
-        headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
-        if "schedule" in headers and "room" in headers:
-            target_table = table
-            break
+    # Prioritize table with id="cart" (OES Enrolled cart)
+    target_table = soup.find("table", id="cart")
+    if not target_table:
+        tables = soup.find_all("table")
+        for table in tables:
+            headers = [th.get_text(strip=True).lower() for th in table.find_all("th")]
+            if "schedule" in headers and "room" in headers:
+                target_table = table
+                break
 
     if target_table is None:
         print("Warning: No schedule table found")
@@ -165,9 +167,9 @@ def parse_schedule_table(html: str) -> tuple[list[dict], str, int]:
         text = cell.get_text(strip=True).lower()
         if text == "code":
             col_map["code"] = idx
-        elif "course" in text:
+        elif text in ["course no", "course no."]:
             col_map["course_no"] = idx
-        elif "desc" in text or "subject" in text:
+        elif "desc" in text or "subject" in text or "title" in text:
             col_map["subject"] = idx
         elif text == "schedule":
             col_map["schedule"] = idx

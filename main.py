@@ -12,6 +12,11 @@ from scraper import (
     scrape_transcript,
     scrape_evaluation,
 )
+from oes_scraper import (
+    scrape_oes_enrolled_schedule,
+    scrape_oes_available_subjects,
+    export_available_subjects_to_csv,
+)
 from ics_gen import generate_ics
 from change_detect import (
     is_first_run,
@@ -88,6 +93,26 @@ def generate_schedule():
         print("Could not generate schedule ICS.")
 
 
+def generate_oes_schedule():
+    print("Scraping OES Enrolled Subjects...")
+    html = scrape_oes_enrolled_schedule()
+    path = generate_ics(html, "oes_schedule.ics")
+    if path:
+        print(f"Done. OES Schedule saved to: {path}")
+    else:
+        print("Could not generate OES schedule ICS.")
+
+
+def generate_oes_available_subjects():
+    print("Scraping OES Available Subjects (A-Z)...")
+    subjects = scrape_oes_available_subjects()
+    path = export_available_subjects_to_csv(subjects)
+    if path:
+        print(f"Done. Saved to: {path}")
+    else:
+        print("Could not export available subjects.")
+
+
 def scrape_all(force: bool = False):
     generate_schedule()
     check_transcript(force=force)
@@ -122,6 +147,8 @@ def main():
         help="Check Student Evaluation (notify on change)",
     )
     parser.add_argument("-a", "--all", action="store_true", help="Run all scrapers")
+    parser.add_argument("--oes-schedule", action="store_true", help="Generate OES Enrolled Schedule ICS")
+    parser.add_argument("--oes-available", action="store_true", help="Export OES Available Subjects to CSV")
     parser.add_argument(
         "-f",
         "--force",
@@ -131,17 +158,19 @@ def main():
     args = parser.parse_args()
 
     # If no flags provided, run interactive menu
-    if not any([args.schedule, args.transcript, args.evaluation, args.all]):
+    if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available]):
         while True:
             print("\n=== myUNC Scraper ===")
             print("  1) Generate Schedule ICS")
             print("  2) Check Transcript of Grades (notify on change)")
             print("  3) Check Student Evaluation (notify on change)")
             print("  4) Scrape All")
-            print("  5) Exit")
+            print("  5) Generate OES Enrolled Schedule ICS")
+            print("  6) Export OES Available Subjects to CSV")
+            print("  7) Exit")
             choice = input("\nSelect option: ").strip()
 
-            if choice == "5":
+            if choice == "7":
                 print("Bye.")
                 break
 
@@ -150,6 +179,8 @@ def main():
                 "2": check_transcript,
                 "3": check_evaluation,
                 "4": scrape_all,
+                "5": generate_oes_schedule,
+                "6": generate_oes_available_subjects,
             }
             action = actions.get(choice)
             if action is None:
@@ -188,6 +219,18 @@ def main():
                 check_evaluation(force=args.force)
             except Exception as e:
                 notify_error("evaluation", e)
+                raise
+        if args.oes_schedule:
+            try:
+                generate_oes_schedule()
+            except Exception as e:
+                notify_error("oes_schedule", e)
+                raise
+        if args.oes_available:
+            try:
+                generate_oes_available_subjects()
+            except Exception as e:
+                notify_error("oes_available", e)
                 raise
 
 
