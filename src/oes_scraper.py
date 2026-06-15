@@ -81,6 +81,13 @@ def parse_available_subjects(html: str) -> list[dict]:
         return subjects
     
     rows = table.find_all("tr")[1:] # skip header
+    last_code = ""
+    last_course_no = ""
+    last_unit = ""
+    last_title = ""
+    last_type = ""
+    last_tally = ""
+    
     for row in rows:
         cells = row.find_all(["td", "th"])
         if len(cells) < 9:
@@ -99,7 +106,37 @@ def parse_available_subjects(html: str) -> list[dict]:
         teacher = cells[7].get_text(strip=True)
         tally = cells[8].get_text(strip=True)
         
-        if course_no or title: # avoid completely empty rows that might just be formatting
+        if not code:
+            code = last_code
+        else:
+            last_code = code
+            
+        if not course_no:
+            course_no = last_course_no
+        else:
+            last_course_no = course_no
+            
+        if not unit:
+            unit = last_unit
+        else:
+            last_unit = unit
+            
+        if not title:
+            title = last_title
+        else:
+            last_title = title
+            
+        if not type_str:
+            type_str = last_type
+        else:
+            last_type = type_str
+            
+        if not tally:
+            tally = last_tally
+        else:
+            last_tally = tally
+            
+        if course_no or title:
             subjects.append({
                 "code": code,
                 "course_no": course_no,
