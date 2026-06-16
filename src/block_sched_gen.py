@@ -255,7 +255,7 @@ def generate_schedules_for_period(year_level, semester, prospectus_path="prospec
     os.makedirs(output_dir, exist_ok=True)
     
     def plot_schedule_on_axis(ax, block_name, block_df):
-        ax.set_title(f"WEEKLY SCHEDULE — {block_name}", fontsize=14, fontweight='bold', pad=15, color='#1D3557')
+        ax.set_title(f"WEEKLY SCHEDULE — {block_name} ({year_level} — {semester})", fontsize=14, fontweight='bold', pad=15, color='#1D3557')
         ax.set_xlim(-0.5, 5.5)
         ax.set_ylim(21.5, 7.5)
         ax.set_xticks(range(6))
