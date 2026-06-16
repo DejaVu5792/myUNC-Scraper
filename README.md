@@ -1,16 +1,25 @@
 # myUNC Scraper
-Quick tools for UNC's web portal, such as:
-- Export schedule as ICS
+Quick tools for UNC's web portal and OES using CLI or TUI interface.
+
+## Features
+- Export schedule from myUNC as ICS
+- OES support
+    - Export Block Schedules as ICS/PNG for subjects
+    - Export currently enrolled subjects in premat as ICS
 - Check for changes in Grades
     - Notifies through ntfy
     
 # How to use
 ## Setup
+- Setup dependencies
 ```bash
 uv sync
+uv run playwright install
+cp .env.example .env
 ```
+- Enter credentials in .env or load through using CLI arguments
 ## Running
-- For CLI
+- For TUI
 ```bash
 uv run main.py
 ```
