@@ -23,9 +23,24 @@ def launch_browser(playwright):
 
 def create_page(context) -> Page:
     page = context.new_page()
-    page.on("console", lambda msg: print(f"Browser Console {msg.type}: {msg.text}"))
+    
+    def on_console(msg):
+        if msg.type == "warning":
+            return
+        text_lower = msg.text.lower()
+        if "failed to load resource" in text_lower or "status of 404" in text_lower:
+            return
+        print(f"Browser Console {msg.type}: {msg.text}")
+        
+    def on_response(res):
+        if res.status >= 400:
+            if res.status == 404:
+                return
+            print(f"Network Error: {res.status} {res.url}")
+
+    page.on("console", on_console)
     page.on("pageerror", lambda err: print(f"Browser Page Error: {err}"))
-    page.on("response", lambda res: print(f"Network Error: {res.status} {res.url}") if res.status >= 400 else None)
+    page.on("response", on_response)
     return page
 
 def login_oes(page: Page) -> None:
@@ -58,7 +73,6 @@ def get_enrolled_subjects(page: Page) -> str:
     
     # Wait for the cart table to load and become visible
     page.locator('#cart').wait_for(state="visible", timeout=15000)
-    page.screenshot(path="debug_enrolled_live.png")
     
     return page.content()
 

@@ -11,11 +11,11 @@ DAY_MAP = {
     "T": "TU",
     "W": "WE",
     "H": "TH",
-    "Th": "TH",
+    "TH": "TH",
     "F": "FR",
     "S": "SA",
     "SN": "SU",
-    "Su": "SU",
+    "SU": "SU",
 }
 
 # Map S/Y year ranges to semester start/end dates
@@ -71,10 +71,11 @@ def detect_period(html: str) -> tuple[str, int]:
 
 def parse_days(day_str: str) -> list[str]:
     """Parse combined day abbreviations like 'MWF', 'TTH', 'S' into RRULE BYDAY codes."""
+    day_str = day_str.upper().strip()
     days = []
     i = 0
     while i < len(day_str):
-        # Try two-char match first (TH, TU, etc.)
+        # Try two-char match first (TH, SN, SU, etc.)
         if i + 1 < len(day_str):
             two = day_str[i : i + 2]
             if two in DAY_MAP:
@@ -82,8 +83,9 @@ def parse_days(day_str: str) -> list[str]:
                 i += 2
                 continue
         # Single char match
-        if day_str[i] in DAY_MAP:
-            days.append(DAY_MAP[day_str[i]])
+        char = day_str[i]
+        if char in DAY_MAP:
+            days.append(DAY_MAP[char])
             i += 1
         else:
             i += 1
@@ -137,7 +139,9 @@ def parse_schedule_column(schedule_text: str) -> tuple[str, str] | None:
 def cleanup_1enrl(val: str) -> str:
     if not val:
         return ""
-    return val.replace("1ENRL", "").strip(" -")
+    val = val.replace("1ENRL", "")
+    val = val.replace("ENRL", "")
+    return val.strip(" -")
 
 
 def parse_schedule_table(html: str) -> tuple[list[dict], str, int]:
@@ -252,8 +256,11 @@ def find_next_weekday(start_date: date, weekday_code: str) -> date:
     days_ahead = (target - current) % 7
     return start_date + timedelta(days=days_ahead)
 
-def generate_ics(html: str, output_path: str = "schedule.ics") -> str:
+def generate_ics(html: str, output_path: str = "data/schedule.ics") -> str:
     """Generate an ICS file from schedule HTML. Returns path to generated file."""
+    import os
+    if os.path.dirname(output_path):
+        os.makedirs(os.path.dirname(output_path), exist_ok=True)
     entries, sem_str, year = parse_schedule_table(html)
     if not entries:
         print("No schedule entries found, skipping ICS generation.")

@@ -99,7 +99,7 @@ def generate_schedule():
 def generate_oes_schedule():
     print("Scraping OES Enrolled Subjects...")
     html = scrape_oes_enrolled_schedule()
-    path = generate_ics(html, "oes_schedule.ics")
+    path = generate_ics(html, "data/oes_schedule.ics")
     if path:
         print(f"Done. OES Schedule saved to: {path}")
     else:
