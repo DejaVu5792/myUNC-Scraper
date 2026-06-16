@@ -1,0 +1,77 @@
+year level,semester,subject id,subject description
+1st Year,1st Semester,MATH1118,Mathematics for Engineers
+1st Year,1st Semester,MATH112g,Calculus 1-Differential Calculus
+1st Year,1st Semester,CHEM113g,Chemistry for Engineers
+1st Year,1st Semester,DRAW114g,Engineering Drawing and Plans
+1st Year,1st Semester,MMW,Mathematics in the Modern World
+1st Year,1st Semester,STS,"Science, Technology and Society w/ HIV Educ"
+1st Year,1st Semester,UTS,Understanding the Self
+1st Year,1st Semester,NSTP1,NSTP/Civic Welfare Training Service I
+1st Year,1st Semester,PE1,Physical Activities Towards Health and Fitness PATHI
+1st Year,1st Semester,SOC ARTS 1,The University of 21st Century Learning
+1st Year,2nd Semester,MATH121g,Calculus 2-integral Calculus
+1st Year,2nd Semester,MATH122g,Engineering Data Analysis
+1st Year,2nd Semester,PHYS123g,Physics for Engineers
+1st Year,2nd Semester,ME124g,Computer Aided Drafting
+1st Year,2nd Semester,ME125g,Workshop Theory and Practice
+1st Year,2nd Semester,PC,Purposive Communication
+1st Year,2nd Semester,RPH,Readings in Philippine History
+1st Year,2nd Semester,NSTP2,NSTP/Civic Welfare Training Service II
+1st Year,2nd Semester,PF2,Physical Activities Towards Health and Fitness PATH II.
+1st Year,2nd Semester,SOC ARTS 2,Special Topics
+2nd Year,1st Semester,MATH211g,Differential Equations
+2nd Year,1st Semester,ME212g,Statics of Rigid Bodies
+2nd Year,1st Semester,ME213g,Basic Electrical Engineering
+2nd Year,1st Semester,ME214g,Machine Shop Theory
+2nd Year,1st Semester,ME215g,Mechanical Engineering Orientation
+2nd Year,1st Semester,ME216g,Thermodynamics 1
+2nd Year,1st Semester,ETH,Ethics
+2nd Year,1st Semester,TCW,The Contemporary World
+2nd Year,1st Semester,PE3,Physical Activities Towards Health and Fitness PATH-Fit III
+2nd Year,1st Semester,Phys216g,Physics for Engineers 2
+2nd Year,2nd Semester,MATH221g,Advanced Engineering Mathematics
+2nd Year,2nd Semester,ME2228,Engineering Economics
+2nd Year,2nd Semester,ME223g,Dynamics of Rigid Bodies
+2nd Year,2nd Semester,ME224g,Mechanics of Deformable Bodies
+2nd Year,2nd Semester,ME225g,Basic Electronics
+2nd Year,2nd Semester,ME226g,Heat Transfer
+2nd Year,2nd Semester,ME227g,Thermodynamics 2
+2nd Year,2nd Semester,GEE1g,Great Books
+2nd Year,2nd Semester,FILI,Filipino 1
+2nd Year,2nd Semester,PE4,Physical Activities Towards Health and Fitness PATH-Fit IV
+2nd Year,Summer,ME301g,Fluid Mechanics
+2nd Year,Summer,AA,Art Appreciation
+3rd Year,1st Semester,ME311g,Techopreneurship
+3rd Year,1st Semester,ME312g,Computer Application for ME
+3rd Year,1st Semester,ME313g,Combustion Engineering
+3rd Year,1st Semester,ME314g,DC and AC Machinery
+3rd Year,1st Semester,ME3158,Fluid Machineries
+3rd Year,1st Semester,ME316g,Machine Elements
+3rd Year,1st Semester,ME317g,Materials Science and Engineering for ME
+3rd Year,1st Semester,ME318g,ME Laboratory 1
+3rd Year,1st Semester,ME319g,Methods of Research
+3rd Year,1st Semester,ME3110g,Refrigeration Systems
+3rd Year,1st Semester,ME3111g,Vibration Engineering
+3rd Year,2nd Semester,ME321g,Airconditioning and Ventilation Systems
+3rd Year,2nd Semester,ME322g,Basic Occupational Safety and Health
+3rd Year,2nd Semester,ME323g,Control Engineering
+3rd Year,2nd Semester,ME324g,Control Engineering Laboratory
+3rd Year,2nd Semester,ME325g,Engineering Management
+3rd Year,2nd Semester,ME326g,Machine Design 1
+3rd Year,2nd Semester,ME327g,ME Laboratory 2
+3rd Year,2nd Semester,ME328g,"ME Laws, Ethics, Codes and Standards"
+3rd Year,2nd Semester,ME329g,ME Project Study 1
+3rd Year,2nd Semester,ME3210g,Power Plant Design w/ Renewable Energy
+3rd Year,2nd Semester,FIL2,Filipino 2
+3rd Year,Summer,ME421g,Correlation 1
+3rd Year,Summer,ME422g,Correlation 2
+3rd Year,Summer,ME423g,Correlation 3
+4th Year,1st Semester,ME411g,Industrial Plant Engineering
+4th Year,1st Semester,ME412g,Machine Design 2
+4th Year,1st Semester,ME413g,Manufac. & Industr'l Processes w/ Plant Visit
+4th Year,1st Semester,ME414g,ME Laboratory 3
+4th Year,1st Semester,ME415g,ME Project Study 2
+4th Year,1st Semester,ME416g,ME Elective 1
+4th Year,1st Semester,ME4178,IME Elective 2
+4th Year,1st Semester,RLW,Life and Works of Rizal
+4th Year,1st Semester,EPEP,Professional Employment Program for Engineers

@@ -1,0 +1,79 @@
+year level,semester,subject id,subject description
+1st Year,1st Semester,ARCH111g,Design 1
+1st Year,1st Semester,ARCH112g,Graphics 1
+1st Year,1st Semester,ARCH113g,Theory of Architecture 1
+1st Year,1st Semester,ARCH114g,Visual Techniques 1
+1st Year,1st Semester,MATH115g,Mathematics for Architects
+1st Year,1st Semester,MATH116g,Solid Mensuration
+1st Year,1st Semester,MMW,Mathematics in the Modern World
+1st Year,1st Semester,UTS,Understanding the Self
+1st Year,1st Semester,PE1,PATHI
+1st Year,1st Semester,NSTP1,NSTP/Civic Welfare Training Service I
+1st Year,1st Semester,SOCARTS 1,"The University of 21"" Century Learning"
+1st Year,2nd Semester,ARCH121g,Design 2
+1st Year,2nd Semester,ARCH122g,Graphics 2
+1st Year,2nd Semester,ARCH123g,Theory of Architecture 2
+1st Year,2nd Semester,ARCH124g,Visual Techniques 2
+1st Year,2nd Semester,MATH125g,Differential and integral Calculus
+1st Year,2nd Semester,PC,Purposive Communication
+1st Year,2nd Semester,RPH,Readings in Philippine History
+1st Year,2nd Semester,NSTP2,NSTP/Civic Welfare Training Service II
+1st Year,2nd Semester,PE2,Physical Activities Towards Health and Fitness PATH II
+1st Year,2nd Semester,SOCARTS 2,Special Topics
+1st Year,2nd Semester,STS,"Science, Technology, and Society w/ HIV Educ"
+2nd Year,1st Semester,ARCH211g,Design 3
+2nd Year,1st Semester,ARCH212g,Architectural Interiors
+2nd Year,1st Semester,ARCH213g,Building Technology 1
+2nd Year,1st Semester,ARCH214g,History of Architecture 1
+2nd Year,1st Semester,ARCH215g,Visual Techniques 3
+2nd Year,1st Semester,ETH,Ethics
+2nd Year,1st Semester,TCW,The Contemporary World
+2nd Year,1st Semester,PE3,Physical Activities Towards Health and Fitness PATH-Fit III
+2nd Year,2nd Semester,ARCH221g,Design 4
+2nd Year,2nd Semester,ARCH222g,Building Technology 2
+2nd Year,2nd Semester,ARCH223g,Building Utilities 1
+2nd Year,2nd Semester,ARCH224g,History of Architecture 2
+2nd Year,2nd Semester,ARCH225g,Tropical Design
+2nd Year,2nd Semester,ARCH226g,Statics of Rigid Bodies
+2nd Year,2nd Semester,ARCH227g,Surveying
+2nd Year,2nd Semester,AA,Art Appreciation
+2nd Year,2nd Semester,PE4,Physical Activities Towards Health and Fitness PATH-Fit IV
+3rd Year,1st Semester,ARCH311g,Design 5
+3rd Year,1st Semester,ARCH312g,Building Technology 3
+3rd Year,1st Semester,ARCH313g,Building Utilities 2
+3rd Year,1st Semester,ARCH314g,History of Architecture 3
+3rd Year,1st Semester,ARCH315g,Professional Practice 1
+3rd Year,1st Semester,ARCH316g,Strength of Materials
+3rd Year,1st Semester,CADD1,Computer Aided Design & Drafting 1
+3rd Year,1st Semester,RLW,Life and Works of Rizal
+3rd Year,2nd Semester,ARCH321g,Design 6
+3rd Year,2nd Semester,ARCH322g,Building Technology 4
+3rd Year,2nd Semester,ARCH323g,Architectural Tour
+3rd Year,2nd Semester,ARCH324g,Building Utilities 3
+3rd Year,2nd Semester,ARCH325g,History of Architecture 4
+3rd Year,2nd Semester,ARCH326g,Planning 1
+3rd Year,2nd Semester,ARCH327g,Professional Practice 2
+3rd Year,2nd Semester,ARCH328g,Theory of Structures
+3rd Year,2nd Semester,FIL1,Filipino 1
+4th Year,1st Semester,ARCH411g,Design 7
+4th Year,1st Semester,ARCH412g,Building Technology 5
+4th Year,1st Semester,ARCH413g,Planning 2
+4th Year,1st Semester,ARCH414g,Profession Practice 3
+4th Year,1st Semester,ARCH415g,Steel and Timber Design
+4th Year,1st Semester,CADD2,Computer Aided Design & Drafting 2
+4th Year,2nd Semester,ARCH421g,Design 8
+4th Year,2nd Semester,ARCH422g,Architectural Structures
+4th Year,2nd Semester,ARCH423g,Housing
+4th Year,2nd Semester,ARCH424g,Planning 3
+4th Year,2nd Semester,ARCH425g,Research Methods for Architecture
+4th Year,2nd Semester,ARCH426g,Specialization 1
+4th Year,2nd Semester,GEE1g,Great Books
+4th Year,2nd Semester,FIL2,Filipino 2
+5th Year,1st Semester,ARCH511g,Design 9
+5th Year,1st Semester,ARCH512g,Specialization 2
+5th Year,1st Semester,ARCH513g,Buss. Mgnt & Application for Architecture 1
+5th Year,1st Semester,ARCH514g,Architecture Comprehensive Course
+5th Year,1st Semester,APEP,Professional Employment Program for Architect
+5th Year,2nd Semester,ARCH521g,Design 10
+5th Year,2nd Semester,ARCH522g,Specialization 3
+5th Year,2nd Semester,ARCH523g,Buss. Mgnt & Application for Architecture 2

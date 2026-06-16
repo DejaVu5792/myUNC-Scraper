@@ -1,0 +1,67 @@
+year level,semester,subject id,subject description
+1st Year,1st Semester,MATH111g,Mathematics for Engineers
+1st Year,1st Semester,MATH112g,Calculus 1-Differential Calculus
+1st Year,1st Semester,CHEM113g,Chemistry for Engineers
+1st Year,1st Semester,CpE114g,Programming Logic and Design
+1st Year,1st Semester,MMW,Mathematics in the Modern World
+1st Year,1st Semester,STS,"Science, Technology and Society w/ HIV Educ"
+1st Year,1st Semester,ITS,Understanding the Self
+1st Year,1st Semester,NSTP1,NSTP/Civic Welfare Training Service I
+1st Year,1st Semester,PE1,Physical Activities Towards Health and Fitness PATH
+1st Year,1st Semester,SOC ARTS 1,"The University of 21"" Century Learning"
+1st Year,2nd Semester,MATH121g,Calculus 2-Integral Calculus
+1st Year,2nd Semester,MATH122g,Engineering Data Analysis
+1st Year,2nd Semester,PHYS123g,Physics for Engineers
+1st Year,2nd Semester,CpE124g,Object Oriented Programming
+1st Year,2nd Semester,CpE125g,Computer System and Servicing
+1st Year,2nd Semester,RPH,Readings in Philippine History
+1st Year,2nd Semester,PC,Purposive Communication
+1st Year,2nd Semester,PE2,Physical Activities Towards Health and Fitness PATH II
+1st Year,2nd Semester,SOC ARTS 2,Special Topics
+1st Year,2nd Semester,NSTP2,NSTP/Civic Welfare Training Service II
+1st Year,Summer,CpE2018,Computer Aided Drafting
+1st Year,Summer,CpE202g,Data Structures and Algorithms
+1st Year,Summer,AA,Art Appreciation
+2nd Year,1st Semester,MATH2118,Differential Equations
+2nd Year,1st Semester,CpE212g,Discrete Mathematics
+2nd Year,1st Semester,CpE213g,Software Design
+2nd Year,1st Semester,CpE214g,Fundamentals of Electrical Circuits
+2nd Year,1st Semester,CpE215g,Computer Engineering as a Discipline
+2nd Year,1st Semester,CpE216g,Fundamentals of Electronics Circuits
+2nd Year,1st Semester,ETH,Ethics
+2nd Year,1st Semester,PE3,Physical Activities Towards Health and Fitness PATH-
+2nd Year,1st Semester,Phys215g,Physics for Engineers 2
+2nd Year,2nd Semester,CpE221g,Numerical Methods
+2nd Year,2nd Semester,CpE222g,Engineering Economics
+2nd Year,2nd Semester,CpE223g,Data and Digital Communications
+2nd Year,2nd Semester,CpE224g,Fundamentals of Mixed Signals and Sensors
+2nd Year,2nd Semester,CpE225g,Operating Systems
+2nd Year,2nd Semester,CpE226g,Introduction to HDL
+2nd Year,2nd Semester,GEE1g,Great Books
+2nd Year,2nd Semester,FIL1,Filipino 1
+2nd Year,2nd Semester,PE4,Physical Activities Towards Health and Fitness PATH-
+2nd Year,Summer,CpE301g,Logic Circuits and Design
+2nd Year,Summer,CpE302g,CpE Elective 1
+3rd Year,1st Semester,CpE311g,Technopreneurship
+3rd Year,1st Semester,CpE312g,Computer Engineering Drafting and Design
+3rd Year,1st Semester,CpE313g,Engineering Management
+3rd Year,1st Semester,CpE314g,Computer Networks and Security
+3rd Year,1st Semester,CpE315g,Feedback and Control System
+3rd Year,1st Semester,CpE316g,Microprocessor System
+3rd Year,1st Semester,CpE317g,CPE Electice 2
+3rd Year,1st Semester,CpE319g,Methods of Research
+3rd Year,1st Semester,CpE3110g,CpE Laws and Professional Practice
+3rd Year,2nd Semester,CpE321g,Basic Occupational Safety and Health
+3rd Year,2nd Semester,CpE322g,Computer Architecture and Organization
+3rd Year,2nd Semester,CpE323g,Digital Signal Processing
+3rd Year,2nd Semester,CpE324g,Emerging Technologies in CPE
+3rd Year,2nd Semester,CpE325g,CpE Practice and Design 1
+3rd Year,2nd Semester,RLW,Life and Works of Rizal
+3rd Year,2nd Semester,TCW,The Contemporary World
+3rd Year,2nd Semester,FIL2,Filipino 2
+4th Year,1st Semester,CpE412g,CPE Practice and Design 2
+4th Year,1st Semester,CpE413g,Embedded Systems
+4th Year,1st Semester,CpE414g,Seminars and Field Trips
+4th Year,1st Semester,CpE415g,CPE Elective 3
+4th Year,1st Semester,GPEP,General Professional Employment Program
+4th Year,2nd Semester,CpE421g,On-the-job Training

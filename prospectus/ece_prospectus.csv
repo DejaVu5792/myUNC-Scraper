@@ -1,0 +1,64 @@
+year level,semester,subject id,subject description
+1st Year,1st Semester,MATH111g,Mathematics for Engineers
+1st Year,1st Semester,MATH112g,Calculus 1-Differential Calculus
+1st Year,1st Semester,CHEM113g,Chemistry for Engineers
+1st Year,1st Semester,ECE114g,Computer Aided Drafting
+1st Year,1st Semester,MMW,Mathematics in the Modern World
+1st Year,1st Semester,STS,"Science, Technology and Society w/ HIV Educ"
+1st Year,1st Semester,UTS,Understanding the Self
+1st Year,1st Semester,NSTP1,NSTP/Civic Welfare Training Service I
+1st Year,1st Semester,PE1,Physical Activities Towards Health and Fitness PATH 1
+1st Year,1st Semester,SOC ARTS 1,The University and 21st Century Learning
+1st Year,2nd Semester,MATH1218,Calculus 2-Integral Calculus
+1st Year,2nd Semester,MATH1228,Engineering Data Analysis
+1st Year,2nd Semester,PHYS123g,Physics for Engineers
+1st Year,2nd Semester,ECE124g,Computer Fundamentals & Programming
+1st Year,2nd Semester,PC,Purposive Communication
+1st Year,2nd Semester,RPH,Readings in Philippine History
+1st Year,2nd Semester,NSTP2,NSTP/Civic Welfare Training Service II
+1st Year,2nd Semester,PE2,Physical Activities Towards Health and Fitness PATH II
+1st Year,2nd Semester,SOC ARTS 2,Special Topics
+2nd Year,1st Semester,MATH211g,Differential Equations
+2nd Year,1st Semester,ECE212g,Electrical Circuits 1
+2nd Year,1st Semester,ECE213g,Electronics 1
+2nd Year,1st Semester,ECE214g,Material Science and Engineering
+2nd Year,1st Semester,ETH,Ethics
+2nd Year,1st Semester,РЕЗ,Physical Activities Towards Health and Fitness PATH
+2nd Year,1st Semester,Phys215g,Physics for Engineers 2
+2nd Year,2nd Semester,MATH2218,Advanced Engineering Mathematics
+2nd Year,2nd Semester,ECE222g,Electronics 2
+2nd Year,2nd Semester,ECE223g,Electrical Circuits 2
+2nd Year,2nd Semester,ECE224g,Communications 1
+2nd Year,2nd Semester,ECE225g,Electromagnetics
+2nd Year,2nd Semester,FILI,Filipino 1
+2nd Year,2nd Semester,PE4,Physical Activities Towards Health and Fitness PATH 1
+2nd Year,Summer,ECE301g,Engineering Economics
+2nd Year,Summer,AA,Art Appreciation
+2nd Year,Summer,RLW,Life and Works of Rizal
+3rd Year,1st Semester,ECE3118,Technopreneurship
+3rd Year,1st Semester,ECE312g,Electronics 3
+3rd Year,1st Semester,ECE313g,Engineering Management
+3rd Year,1st Semester,ECE314g,Communication 2
+3rd Year,1st Semester,ECE315g,Computer Applications
+3rd Year,1st Semester,ECE316g,"Signals, Spectra and Signal Processing"
+3rd Year,1st Semester,ECE317g,Logic Circuits and Switching Theory
+3rd Year,1st Semester,ECE318g,Methods of Research
+3rd Year,2nd Semester,ECE3218,Communication 3
+3rd Year,2nd Semester,ECE322g,Communication 4
+3rd Year,2nd Semester,ECE3238,Feedback and Control System
+3rd Year,2nd Semester,ECE324g,Microprocessor and Microcontroller Systems
+3rd Year,2nd Semester,ECE325g,Design 1-Capstone Project 1
+3rd Year,2nd Semester,ECE326g,Environmental Science and Engineering
+3rd Year,2nd Semester,GEE1g,Great Books
+3rd Year,2nd Semester,FIL2,Filipino 2
+3rd Year,Summer,ECE 400g,On the job Training
+4th Year,1st Semester,ECE411g,Design 2-Capstone Project 2
+4th Year,1st Semester,ECE412g,"ECE Laws, Ethics, and Standards"
+4th Year,1st Semester,ECE413g,ECE Elective 1
+4th Year,1st Semester,ECE414g,ECE Elective 2
+4th Year,1st Semester,ECE415g,Seminars/Colloquim
+4th Year,1st Semester,TCW,The Contemporary World
+4th Year,1st Semester,EPEP,Professional Employment Program for Engineers
+4th Year,2nd Semester,ECE422g,Correlation 1
+4th Year,2nd Semester,ECE423g,Correlation 2
+4th Year,2nd Semester,ECE4248,Correlation 3
