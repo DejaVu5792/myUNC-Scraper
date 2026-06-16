@@ -1,6 +1,7 @@
 """CLI entry point for myUNC Scraper."""
 
 import argparse
+import os
 import sys
 import traceback
 from pathlib import Path
@@ -342,7 +343,40 @@ def main():
         action="store_true",
         help="Force notification (simulate change detected)",
     )
+    parser.add_argument(
+        "-mu",
+        "--myunc-username",
+        type=str,
+        help="myUNC Username override"
+    )
+    parser.add_argument(
+        "-mp",
+        "--myunc-password",
+        type=str,
+        help="myUNC Password override"
+    )
+    parser.add_argument(
+        "-ou",
+        "--oes-username",
+        type=str,
+        help="OES Email/Username override"
+    )
+    parser.add_argument(
+        "-op",
+        "--oes-password",
+        type=str,
+        help="OES Password override"
+    )
     args = parser.parse_args()
+
+    if args.myunc_username:
+        os.environ["UNC_USERNAME"] = args.myunc_username
+    if args.myunc_password:
+        os.environ["UNC_PASSWORD"] = args.myunc_password
+    if args.oes_username:
+        os.environ["UNC_OES_EMAIL"] = args.oes_username
+    if args.oes_password:
+        os.environ["UNC_OES_PASSWORD"] = args.oes_password
 
     # If no flags provided, run interactive menu
     if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available, args.oes_block_sched, args.oes_block_sched_ics]):
