@@ -1,0 +1,73 @@
+year level,semester,subject id,subject description
+First Year,First Semester,CHEM113g,Chemistry for Engineers
+First Year,First Semester,EE114g,Computer Aided Drafting
+First Year,First Semester,MATH111g,Mathematics for Engineers
+First Year,First Semester,MATH112g,Calculus 1 Differential Calculus
+First Year,First Semester,MMWg,Mathematics in the Modern World
+First Year,First Semester,NSTP1K,National Service Training Program 1
+First Year,First Semester,STS,"Science, Technology & Society w/ HIV Educ"
+First Year,First Semester,UTS,Understanding the Self
+First Year,First Semester,PATHFIT1,Movement Competency Training
+First Year,First Semester,SOCARTS1,The University and 21st Century Learning
+First Year,Second Semester,MATH121ga,Calculus 2 - Intergral Calculus
+First Year,Second Semester,MATH122g,Engineering Data Analysis
+First Year,Second Semester,EE124g,Computer Fundamentals and Programming
+First Year,Second Semester,PHYS123ga,Physics for Engineers 1
+First Year,Second Semester,NSTP2K,National Service Training Program 2
+First Year,Second Semester,GEC1g,Gender and Society
+First Year,Second Semester,PC,Purposive Communication
+First Year,Second Semester,PATHFIT2,Exercise-based Fitness Activities
+First Year,Second Semester,SOCARTS2,Special Topics
+Second Year,First Semester,MATH211g,Differential Equations
+Second Year,First Semester,EE212g,Engineering Mechanics
+Second Year,First Semester,EE213g,Environmental Science and Engineering
+Second Year,First Semester,EE214g,Basic Thermodynamics
+Second Year,First Semester,EE215g,Electrical Circuits 1
+Second Year,First Semester,PHYS216g,Physics for Engineers 2
+Second Year,First Semester,GEC2g,Great Books
+Second Year,First Semester,TCW,The Contemporary World
+Second Year,First Semester,PATHFit3,Outdoor & Simul'n Sports (w/ Life Saving Exer)
+Second Year,Second Semester,MATH221gee,Engineering Mathematics for EE
+Second Year,Second Semester,EE222g,Fundamentals of Deformable Bodies
+Second Year,Second Semester,EE223g,Electromagnetics
+Second Year,Second Semester,EE224g,Electrical Circuits 2
+Second Year,Second Semester,EE225g,Electronics Circuits
+Second Year,Second Semester,EE226g,Basic Occupational Safety and Health
+Second Year,Second Semester,ETH,Ethics
+Second Year,Second Semester,GEC3g,The Entreprenuerial Minds
+Second Year,Second Semester,PATHFit4,Dance
+Third Year,Second Semester,AA,Art Appreciation
+Third Year,Second Semester,EE301g,Engineering Economics
+Third Year,Second Semester,RLW,Rizal's Life and Works
+Third Year,First Semester,EE311g,Technopreneurship
+Third Year,First Semester,EE312g,Fluid Mechanics
+Third Year,First Semester,EE313g,Engineering Management
+Third Year,First Semester,EE314g,Numerical Methods
+Third Year,First Semester,EE315g,Electrical Appratus and Devices
+Third Year,First Semester,EE316g,Electrical Machines 1
+Third Year,First Semester,EE317g,Feedback Control System
+Third Year,First Semester,EE318g,Logic Circuits and Switching Theory
+Third Year,First Semester,EE319g,Materials Science and Engineering
+Third Year,First Semester,EE3110g,EE Elective 1
+Third Year,Second Semester,EE321g,Electrical Machines 2
+Third Year,Second Semester,EE322gb,"EE Laws, Codes and Professional Ethics"
+Third Year,Second Semester,EE323g,Fund. of Electronics Communications
+Third Year,Second Semester,EE324g,Instrumentation and Control
+Third Year,Second Semester,EE325g,Microprocessor Systems
+Third Year,Second Semester,EE326ga,Methods of Research
+Third Year,Second Semester,EE327g,Industrial Electronics
+Third Year,Second Semester,EE328g,EE Elective 2
+Third Year,Second Semester,EE329h,Electrical Installation and Maintenance
+Third Year,Second Semester,RPH,Reading in Philippine History
+Fourth Year,Second Semester,EE401g,On-the-job Training
+Fourth Year,First Semester,EE411g,Capstone Design Project
+Fourth Year,First Semester,EE412g,Electrical Sys. & Illumination Eng'g Design
+Fourth Year,First Semester,EE413g,Power System Analysis
+Fourth Year,First Semester,EE414g,Seminars/Colloquim
+Fourth Year,First Semester,EE415g,Distribution Sys. and Substation Design
+Fourth Year,First Semester,EE416g,Fund. of Power Plant Engg Design
+Fourth Year,First Semester,EE417ga,Electrical Standards and Practices
+Fourth Year,First Semester,EPEP,Prof. Employment Program for Engineers
+Fourth Year,Second Semester,EE421g,Correlation 1
+Fourth Year,Second Semester,EE422g,Correlation 2
+Fourth Year,Second Semester,EE423g,Correlation 3

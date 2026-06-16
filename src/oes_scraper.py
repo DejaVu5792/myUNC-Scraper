@@ -334,10 +334,13 @@ def scrape_oes_available_subjects(departments: list[str] = None) -> list[dict]:
         finally:
             browser.close()
 
-def export_available_subjects_to_csv(subjects: list[dict], output_path: str = "available_subjects.csv") -> str:
+def export_available_subjects_to_csv(subjects: list[dict], output_path: str = "data/available_subjects.csv") -> str:
     if not subjects:
         print("No available subjects to export.")
         return ""
+        
+    # Ensure parent directory exists
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
         
     # Ensure every subject has a 'dept' key (fallback to empty string)
     for subject in subjects:

@@ -118,9 +118,9 @@ def generate_oes_available_subjects(departments: list[str] = None):
 
 def generate_oes_block_schedules():
     print("Generating OES Block Schedules...")
-    periods = block_sched_gen.get_prospectus_periods("it_prospectus.csv")
+    periods = block_sched_gen.get_prospectus_periods("prospectus/it_prospectus.csv")
     if not periods:
-        print("Error: Could not read prospectus periods. Make sure it_prospectus.csv is available.")
+        print("Error: Could not read prospectus periods. Make sure prospectus/it_prospectus.csv is available.")
         return
         
     choices = [(f"{yr} - {sem}", (yr, sem)) for yr, sem in periods]
@@ -140,9 +140,9 @@ def generate_oes_block_schedules():
             return
             
         yr, sem = answers["period"]
-        success = block_sched_gen.generate_schedules_for_period(yr, sem, "it_prospectus.csv", "available_subjects.csv")
+        success = block_sched_gen.generate_schedules_for_period(yr, sem, "prospectus/it_prospectus.csv", "data/available_subjects.csv")
         if success:
-            print(f"Done. Schedules generated in 'output/' folder.")
+            print(f"Done. Schedules generated in 'data/BlockSchedules/' folder.")
         else:
             print("Could not generate block schedules.")
     except Exception as e:
@@ -151,9 +151,9 @@ def generate_oes_block_schedules():
 
 def generate_oes_block_schedules_ics():
     print("Generating OES Block Schedules (ICS)...")
-    periods = block_sched_gen.get_prospectus_periods("it_prospectus.csv")
+    periods = block_sched_gen.get_prospectus_periods("prospectus/it_prospectus.csv")
     if not periods:
-        print("Error: Could not read prospectus periods. Make sure it_prospectus.csv is available.")
+        print("Error: Could not read prospectus periods. Make sure prospectus/it_prospectus.csv is available.")
         return
         
     choices = [(f"{yr} - {sem}", (yr, sem)) for yr, sem in periods]
@@ -173,9 +173,9 @@ def generate_oes_block_schedules_ics():
             return
             
         yr, sem = answers["period"]
-        success = block_sched_gen.generate_ics_schedules_for_period(yr, sem, "it_prospectus.csv", "available_subjects.csv")
+        success = block_sched_gen.generate_ics_schedules_for_period(yr, sem, "prospectus/it_prospectus.csv", "data/available_subjects.csv")
         if success:
-            print(f"Done. ICS schedules generated in 'output/' folder.")
+            print(f"Done. ICS schedules generated in 'data/BlockSchedules/' folder.")
         else:
             print("Could not generate block schedules ICS.")
     except Exception as e:

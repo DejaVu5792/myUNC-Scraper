@@ -16,5 +16,3 @@ wheels/
 # Scraped data and generated files
 data/
 *.ics
-available_subjects.csv
-/output

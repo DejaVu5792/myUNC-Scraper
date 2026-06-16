@@ -97,7 +97,7 @@ def get_block_name(course_no):
     prog = prog_map.get(prog_char, "UNKNOWN")
     return f"{prog} {block_letter}"
 
-def get_prospectus_periods(prospectus_path="it_prospectus.csv"):
+def get_prospectus_periods(prospectus_path="prospectus/it_prospectus.csv"):
     if not os.path.exists(prospectus_path):
         return []
     df = pd.read_csv(prospectus_path)
@@ -109,7 +109,7 @@ def get_prospectus_periods(prospectus_path="it_prospectus.csv"):
         return (yr_val, sem_val)
     return sorted(pairs, key=sort_key)
 
-def generate_schedules_for_period(year_level, semester, prospectus_path="it_prospectus.csv", avail_path="available_subjects.csv", output_dir="output"):
+def generate_schedules_for_period(year_level, semester, prospectus_path="prospectus/it_prospectus.csv", avail_path="data/available_subjects.csv", output_dir="data/BlockSchedules"):
     if not os.path.exists(avail_path):
         print(f"Error: {avail_path} does not exist. Please export OES available subjects to CSV first.")
         return False
@@ -170,6 +170,10 @@ def generate_schedules_for_period(year_level, semester, prospectus_path="it_pros
         return False
         
     df = pd.DataFrame(schedule)
+    df = df[~df['block'].str.upper().str.contains("UNKNOWN")]
+    if df.empty:
+        print("No valid non-UNKNOWN schedule slots parsed from matching subjects.")
+        return False
     
     courses = df['title'].unique()
     colors_palette = ['#FFADAD', '#CAFFBF', '#9BF6FF', '#FFD6A5', '#BDB2FF', '#FFC6FF']
@@ -251,7 +255,7 @@ def generate_schedules_for_period(year_level, semester, prospectus_path="it_pros
     return True
 
 
-def generate_ics_schedules_for_period(year_level, semester, prospectus_path="it_prospectus.csv", avail_path="available_subjects.csv", output_dir="output"):
+def generate_ics_schedules_for_period(year_level, semester, prospectus_path="prospectus/it_prospectus.csv", avail_path="data/available_subjects.csv", output_dir="data/BlockSchedules"):
     if not os.path.exists(avail_path):
         print(f"Error: {avail_path} does not exist. Please export OES available subjects to CSV first.")
         return False
@@ -314,6 +318,10 @@ def generate_ics_schedules_for_period(year_level, semester, prospectus_path="it_
         return False
         
     df = pd.DataFrame(schedule)
+    df = df[~df['block'].str.upper().str.contains("UNKNOWN")]
+    if df.empty:
+        print("No valid non-UNKNOWN schedule slots parsed from matching subjects.")
+        return False
     blocks = sorted(df['block'].unique())
     
     os.makedirs(output_dir, exist_ok=True)
