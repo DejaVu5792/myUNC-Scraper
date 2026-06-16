@@ -83,6 +83,11 @@ def get_block_name(course_no):
     if len(parts) < 2:
         return "UNKNOWN"
     section_code = parts[-1].strip()
+    
+    # Strip trailing 'L' if it represents a Lab section (e.g. OQaL, PYaL)
+    if len(section_code) >= 4 and section_code[-1].upper() == 'L':
+        section_code = section_code[:-1]
+        
     if len(section_code) < 3:
         return f"UNKNOWN {section_code.upper()}"
         
@@ -92,7 +97,21 @@ def get_block_name(course_no):
     prog_map = {
         'B': 'BIT',
         'C': 'BCS',
-        'A': 'ACT'
+        'A': 'ACT',
+        # Online / OES codes
+        'Q': 'EE',
+        'P': 'CpE',
+        'O': 'CE',
+        'S': 'ME',
+        # F2F / Professional codes
+        'U': 'EE',
+        'V': 'CE',
+        'W': 'CpE',
+        'Y': 'CpE',
+        'X': 'ME',
+        # Architecture & Interior Design
+        'N': 'ARCH',
+        'D': 'BSID',
     }
     prog = prog_map.get(prog_char, "UNKNOWN")
     return f"{prog} {block_letter}"
@@ -103,9 +122,28 @@ def get_prospectus_periods(prospectus_path="prospectus/it_prospectus.csv"):
     df = pd.read_csv(prospectus_path)
     pairs = df[['year level', 'semester']].drop_duplicates().values.tolist()
     def sort_key(pair):
-        yr, sem = pair[0], pair[1]
-        yr_val = 1 if "1st" in yr else (2 if "2nd" in yr else (3 if "3rd" in yr else 4))
-        sem_val = 1 if "1st" in sem else 2
+        yr, sem = pair[0].lower(), pair[1].lower()
+        
+        # Year mapping
+        if "1st" in yr or "first" in yr:
+            yr_val = 1
+        elif "2nd" in yr or "second" in yr:
+            yr_val = 2
+        elif "3rd" in yr or "third" in yr:
+            yr_val = 3
+        elif "4th" in yr or "fourth" in yr:
+            yr_val = 4
+        else:
+            yr_val = 5
+            
+        # Semester mapping
+        if "1st" in sem or "first" in sem:
+            sem_val = 1
+        elif "2nd" in sem or "second" in sem:
+            sem_val = 2
+        else:
+            sem_val = 3
+            
         return (yr_val, sem_val)
     return sorted(pairs, key=sort_key)
 
@@ -171,6 +209,36 @@ def generate_schedules_for_period(year_level, semester, prospectus_path="prospec
         
     df = pd.DataFrame(schedule)
     df = df[~df['block'].str.upper().str.contains("UNKNOWN")]
+    
+    # Filter by prospectus program prefix to sort out unrelated blocks/courses
+    filename = os.path.basename(prospectus_path).lower()
+    allowed_prefixes = []
+    if "ee_" in filename or "ee." in filename:
+        allowed_prefixes = ["EE"]
+    elif "it_" in filename or "it." in filename:
+        allowed_prefixes = ["BIT", "BCS", "ACT"]
+    elif "ce_" in filename or "ce." in filename:
+        allowed_prefixes = ["CE"]
+    elif "cpe_" in filename or "cpe." in filename:
+        allowed_prefixes = ["CpE"]
+    elif "me_" in filename or "me." in filename:
+        allowed_prefixes = ["ME"]
+    elif "arch_" in filename or "arch." in filename:
+        allowed_prefixes = ["ARCH"]
+    elif "bsid_" in filename or "bsid." in filename:
+        allowed_prefixes = ["BSID"]
+    else:
+        name_part = filename.split('_')[0].split('.')[0].upper()
+        if name_part == "IT":
+            allowed_prefixes = ["BIT", "BCS", "ACT"]
+        elif name_part == "CPE":
+            allowed_prefixes = ["CpE"]
+        else:
+            allowed_prefixes = [name_part]
+
+    if allowed_prefixes:
+        df = df[df['block'].apply(lambda b: any(b.upper().startswith(prefix.upper()) for prefix in allowed_prefixes))]
+        
     if df.empty:
         print("No valid non-UNKNOWN schedule slots parsed from matching subjects.")
         return False
@@ -319,6 +387,36 @@ def generate_ics_schedules_for_period(year_level, semester, prospectus_path="pro
         
     df = pd.DataFrame(schedule)
     df = df[~df['block'].str.upper().str.contains("UNKNOWN")]
+    
+    # Filter by prospectus program prefix to sort out unrelated blocks/courses
+    filename = os.path.basename(prospectus_path).lower()
+    allowed_prefixes = []
+    if "ee_" in filename or "ee." in filename:
+        allowed_prefixes = ["EE"]
+    elif "it_" in filename or "it." in filename:
+        allowed_prefixes = ["BIT", "BCS", "ACT"]
+    elif "ce_" in filename or "ce." in filename:
+        allowed_prefixes = ["CE"]
+    elif "cpe_" in filename or "cpe." in filename:
+        allowed_prefixes = ["CpE"]
+    elif "me_" in filename or "me." in filename:
+        allowed_prefixes = ["ME"]
+    elif "arch_" in filename or "arch." in filename:
+        allowed_prefixes = ["ARCH"]
+    elif "bsid_" in filename or "bsid." in filename:
+        allowed_prefixes = ["BSID"]
+    else:
+        name_part = filename.split('_')[0].split('.')[0].upper()
+        if name_part == "IT":
+            allowed_prefixes = ["BIT", "BCS", "ACT"]
+        elif name_part == "CPE":
+            allowed_prefixes = ["CpE"]
+        else:
+            allowed_prefixes = [name_part]
+
+    if allowed_prefixes:
+        df = df[df['block'].apply(lambda b: any(b.upper().startswith(prefix.upper()) for prefix in allowed_prefixes))]
+        
     if df.empty:
         print("No valid non-UNKNOWN schedule slots parsed from matching subjects.")
         return False

@@ -116,31 +116,73 @@ def generate_oes_available_subjects(departments: list[str] = None):
         print("Could not export available subjects.")
 
 
-def generate_oes_block_schedules():
-    print("Generating OES Block Schedules...")
-    periods = block_sched_gen.get_prospectus_periods("prospectus/it_prospectus.csv")
-    if not periods:
-        print("Error: Could not read prospectus periods. Make sure prospectus/it_prospectus.csv is available.")
-        return
+def select_prospectus_and_period() -> tuple[str, tuple[str, str]]:
+    """Helper to select a prospectus file and a period.
+    Returns (prospectus_path, (year_level, semester)) or (None, None).
+    """
+    prospectus_dir = Path("prospectus")
+    if not prospectus_dir.exists():
+        print(f"Error: Directory '{prospectus_dir}' does not exist.")
+        return None, None
         
-    choices = [(f"{yr} - {sem}", (yr, sem)) for yr, sem in periods]
+    csv_files = sorted(list(prospectus_dir.glob("*.csv")))
+    if not csv_files:
+        print(f"Error: No prospectus CSV files found in '{prospectus_dir}'.")
+        return None, None
+        
+    choices = [(f"{f.stem.replace('_', ' ').title()} ({f.name})", str(f)) for f in csv_files]
     choices.append(("Back to main menu", None))
     
     questions = [
         inquirer.List(
-            "period",
-            message="Select prospectus period",
+            "prospectus",
+            message="Select prospectus",
             choices=choices,
             carousel=True,
         )
     ]
     try:
         answers = inquirer.prompt(questions, theme=BlueComposure())
-        if not answers or answers.get("period") is None:
-            return
+        if not answers or answers.get("prospectus") is None:
+            return None, None
             
-        yr, sem = answers["period"]
-        success = block_sched_gen.generate_schedules_for_period(yr, sem, "prospectus/it_prospectus.csv", "data/available_subjects.csv")
+        selected_prospectus = answers["prospectus"]
+        periods = block_sched_gen.get_prospectus_periods(selected_prospectus)
+        if not periods:
+            print(f"Error: Could not read prospectus periods from '{selected_prospectus}'.")
+            return None, None
+            
+        period_choices = [(f"{yr} - {sem}", (yr, sem)) for yr, sem in periods]
+        period_choices.append(("Back to main menu", None))
+        
+        questions_period = [
+            inquirer.List(
+                "period",
+                message=f"Select period from {Path(selected_prospectus).name}",
+                choices=period_choices,
+                carousel=True,
+            )
+        ]
+        answers_period = inquirer.prompt(questions_period, theme=BlueComposure())
+        if not answers_period or answers_period.get("period") is None:
+            return None, None
+            
+        return selected_prospectus, answers_period["period"]
+    except Exception as e:
+        print(f"Error selecting prospectus/period: {e}")
+        return None, None
+
+
+def generate_oes_block_schedules(prospectus_path: str = None, year_level: str = None, semester: str = None):
+    print("Generating OES Block Schedules...")
+    if not prospectus_path or not year_level or not semester:
+        prospectus_path, period = select_prospectus_and_period()
+        if not prospectus_path or not period:
+            return
+        year_level, semester = period
+        
+    try:
+        success = block_sched_gen.generate_schedules_for_period(year_level, semester, prospectus_path, "data/available_subjects.csv")
         if success:
             print(f"Done. Schedules generated in 'data/BlockSchedules/' folder.")
         else:
@@ -149,31 +191,16 @@ def generate_oes_block_schedules():
         print(f"Error: {e}")
 
 
-def generate_oes_block_schedules_ics():
+def generate_oes_block_schedules_ics(prospectus_path: str = None, year_level: str = None, semester: str = None):
     print("Generating OES Block Schedules (ICS)...")
-    periods = block_sched_gen.get_prospectus_periods("prospectus/it_prospectus.csv")
-    if not periods:
-        print("Error: Could not read prospectus periods. Make sure prospectus/it_prospectus.csv is available.")
-        return
-        
-    choices = [(f"{yr} - {sem}", (yr, sem)) for yr, sem in periods]
-    choices.append(("Back to main menu", None))
-    
-    questions = [
-        inquirer.List(
-            "period",
-            message="Select prospectus period",
-            choices=choices,
-            carousel=True,
-        )
-    ]
-    try:
-        answers = inquirer.prompt(questions, theme=BlueComposure())
-        if not answers or answers.get("period") is None:
+    if not prospectus_path or not year_level or not semester:
+        prospectus_path, period = select_prospectus_and_period()
+        if not prospectus_path or not period:
             return
-            
-        yr, sem = answers["period"]
-        success = block_sched_gen.generate_ics_schedules_for_period(yr, sem, "prospectus/it_prospectus.csv", "data/available_subjects.csv")
+        year_level, semester = period
+        
+    try:
+        success = block_sched_gen.generate_ics_schedules_for_period(year_level, semester, prospectus_path, "data/available_subjects.csv")
         if success:
             print(f"Done. ICS schedules generated in 'data/BlockSchedules/' folder.")
         else:
@@ -293,6 +320,21 @@ def main():
     )
     parser.add_argument("--oes-block-sched", action="store_true", help="Generate OES Block Schedules (from CSV & Prospectus)")
     parser.add_argument("--oes-block-sched-ics", action="store_true", help="Generate OES Block Schedules as ICS (from CSV & Prospectus)")
+    parser.add_argument(
+        "--prospectus",
+        type=str,
+        help="Path to prospectus CSV file (e.g., prospectus/it_prospectus.csv) to use with block schedule generation"
+    )
+    parser.add_argument(
+        "--year-level",
+        type=str,
+        help="Year level for block schedule generation (e.g., 'First Year')"
+    )
+    parser.add_argument(
+        "--semester",
+        type=str,
+        help="Semester for block schedule generation (e.g., 'First Semester')"
+    )
 
     parser.add_argument(
         "-f",
@@ -404,13 +446,21 @@ def main():
                 raise
         if args.oes_block_sched:
             try:
-                generate_oes_block_schedules()
+                generate_oes_block_schedules(
+                    prospectus_path=args.prospectus,
+                    year_level=args.year_level,
+                    semester=args.semester
+                )
             except Exception as e:
                 notify_error("oes_block_sched", e)
                 raise
         if args.oes_block_sched_ics:
             try:
-                generate_oes_block_schedules_ics()
+                generate_oes_block_schedules_ics(
+                    prospectus_path=args.prospectus,
+                    year_level=args.year_level,
+                    semester=args.semester
+                )
             except Exception as e:
                 notify_error("oes_block_sched-ics", e)
                 raise

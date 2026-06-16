@@ -6,7 +6,7 @@ import difflib
 from pathlib import Path
 from bs4 import BeautifulSoup
 
-DATA_DIR = Path(__file__).parent.parent / "data"
+DATA_DIR = Path(__file__).parent.parent / "data" / "update_checks"
 
 
 def extract_grades_by_semester(html: str) -> dict:
@@ -185,7 +185,7 @@ def normalize_content(text: str) -> str:
 
 
 def ensure_data_dir() -> None:
-    DATA_DIR.mkdir(exist_ok=True)
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
 
 
 def content_hash(text: str) -> str:

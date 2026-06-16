@@ -221,30 +221,97 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
             text = " ".join(text.split())
             options.append((text, val))
 
+    print("Available department options in dropdown:")
+    for text, val in options:
+        print(f"  - {text} (Value: {val})")
+
     selected_depts = []
     if departments:
         # Resolve departments list
+        import re
         for d in departments:
             d_upper = d.upper()
             matched_val = None
+            
+            # 1. Exact value match
             for text, val in options:
-                if (val.upper() == d_upper or 
-                    text.upper() == d_upper or 
-                    d_upper in text.upper() or 
-                    (d_upper == "SCIS" and "COMPUTER" in text.upper()) or
-                    (d_upper == "CAS" and "SOCIAL" in text.upper()) or
-                    (d_upper == "CBA" and "BUSINESS" in text.upper()) or
-                    (d_upper == "COED" and "TEACHER" in text.upper()) or
-                    (d_upper == "CEA" and "ENGINEERING" in text.upper()) or
-                    (d_upper == "CON" and "NURSING" in text.upper()) or
-                    (d_upper == "CCJE" and "CRIMINAL" in text.upper()) or
-                    (d_upper == "NSTP" and "NSTP" in text.upper())):
+                if val.upper() == d_upper:
                     matched_val = val
                     break
             if matched_val:
                 selected_depts.append(matched_val)
-            else:
-                print(f"Warning: Could not match department input '{d}' to any dropdown option.")
+                continue
+                
+            # 2. Exact text match
+            for text, val in options:
+                if text.upper() == d_upper:
+                    matched_val = val
+                    break
+            if matched_val:
+                selected_depts.append(matched_val)
+                continue
+                
+            # 3. Known mappings
+            mapped = False
+            for text, val in options:
+                t_up = text.upper()
+                if d_upper == "SCIS" and "COMPUTER" in t_up:
+                    matched_val = val
+                    mapped = True
+                    break
+                elif d_upper == "CAS" and "SOCIAL" in t_up:
+                    matched_val = val
+                    mapped = True
+                    break
+                elif d_upper in ["CEA", "EN", "ENG", "ENGINEERING"] and "ENGINEERING" in t_up:
+                    matched_val = val
+                    mapped = True
+                    break
+                elif d_upper == "CBA" and "BUSINESS" in t_up:
+                    matched_val = val
+                    mapped = True
+                    break
+                elif d_upper == "COED" and "TEACHER" in t_up:
+                    matched_val = val
+                    mapped = True
+                    break
+                elif d_upper == "CON" and "NURSING" in t_up:
+                    matched_val = val
+                    mapped = True
+                    break
+                elif d_upper == "CCJE" and "CRIMINAL" in t_up:
+                    matched_val = val
+                    mapped = True
+                    break
+                elif d_upper == "NSTP" and "NSTP" in t_up:
+                    matched_val = val
+                    mapped = True
+                    break
+            if mapped:
+                selected_depts.append(matched_val)
+                continue
+                
+            # 4. Word-level substring match (to avoid short codes matching inside other words)
+            for text, val in options:
+                words = [w.strip() for w in re.split(r'\W+', text.upper()) if w.strip()]
+                if d_upper in words:
+                    matched_val = val
+                    break
+            if matched_val:
+                selected_depts.append(matched_val)
+                continue
+                
+            # 5. Fallback substring match for queries of length >= 3
+            if len(d_upper) >= 3:
+                for text, val in options:
+                    if d_upper in text.upper():
+                        matched_val = val
+                        break
+            if matched_val:
+                selected_depts.append(matched_val)
+                continue
+                
+            print(f"Warning: Could not match department input '{d}' to any dropdown option.")
 
     # If not provided, or resolved to empty, try to prompt/default
     if not selected_depts:
@@ -348,10 +415,60 @@ def export_available_subjects_to_csv(subjects: list[dict], output_path: str = "d
             subject["dept"] = ""
             
     keys = ["dept", "code", "course_no", "unit", "title", "schedule", "type", "room", "teacher", "tally"]
+    
+    # Load existing subjects if the file exists
+    existing_subjects = []
+    if os.path.exists(output_path):
+        try:
+            with open(output_path, 'r', newline='', encoding='utf-8') as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    # Filter only fields we care about to match key list
+                    cleaned_row = {k: row.get(k, "") for k in keys}
+                    existing_subjects.append(cleaned_row)
+        except Exception as e:
+            print(f"Warning: Could not read existing available subjects from {output_path}: {e}")
+
+    # Use a dictionary to merge and deduplicate
+    # Unique key: (code, schedule, type, room)
+    # New subjects should overwrite existing ones to have updated tally, teacher, etc.
+    merged = {}
+    
+    # First populate with existing subjects
+    for sub in existing_subjects:
+        key = (
+            str(sub.get("code", "")).strip(),
+            str(sub.get("schedule", "")).strip(),
+            str(sub.get("type", "")).strip(),
+            str(sub.get("room", "")).strip()
+        )
+        merged[key] = sub
+        
+    # Overwrite with newly scraped subjects (preserves updated fields and adds new rows)
+    for sub in subjects:
+        key = (
+            str(sub.get("code", "")).strip(),
+            str(sub.get("schedule", "")).strip(),
+            str(sub.get("type", "")).strip(),
+            str(sub.get("room", "")).strip()
+        )
+        merged[key] = sub
+        
+    # Convert back to list, preserving order or sorting by dept, title, code, schedule
+    def sort_key(s):
+        return (
+            s.get("dept", ""),
+            s.get("title", ""),
+            s.get("code", ""),
+            s.get("schedule", "")
+        )
+        
+    deduped_subjects = sorted(merged.values(), key=sort_key)
+    
     with open(output_path, 'w', newline='', encoding='utf-8') as output_file:
         dict_writer = csv.DictWriter(output_file, fieldnames=keys)
         dict_writer.writeheader()
-        dict_writer.writerows(subjects)
+        dict_writer.writerows(deduped_subjects)
         
-    print(f"Exported {len(subjects)} available subjects to {output_path}")
+    print(f"Exported {len(deduped_subjects)} available subjects to {output_path} (merged new scrape, was {len(existing_subjects)} existing)")
     return output_path
