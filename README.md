@@ -18,5 +18,10 @@ uv run main.py
 ```bash
 uv run main.py -h
 ```
+- For OES Available Subjects scan (specific departments)
+```bash
+uv run main.py --oes-available --depts scis,cas
+```
+
 # Disclaimer
 Pure AI Slop, vibe coded, made for personal use.

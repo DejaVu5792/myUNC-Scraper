@@ -106,9 +106,9 @@ def generate_oes_schedule():
         print("Could not generate OES schedule ICS.")
 
 
-def generate_oes_available_subjects():
+def generate_oes_available_subjects(departments: list[str] = None):
     print("Scraping OES Available Subjects (A-Z)...")
-    subjects = scrape_oes_available_subjects()
+    subjects = scrape_oes_available_subjects(departments=departments)
     path = export_available_subjects_to_csv(subjects)
     if path:
         print(f"Done. Saved to: {path}")
@@ -182,13 +182,13 @@ def generate_oes_block_schedules_ics():
         print(f"Error: {e}")
 
 
-def scrape_all(force: bool = False):
+def scrape_all(force: bool = False, departments: list[str] = None):
 
     generate_schedule()
     check_transcript(force=force)
     check_evaluation(force=force)
     generate_oes_schedule()
-    generate_oes_available_subjects()
+    generate_oes_available_subjects(departments=departments)
 
 
 def notify_error(task_name: str, error: Exception) -> None:
@@ -208,7 +208,7 @@ def scrape_multiple():
             choices=[
                 ("Check myUNC Transcript of Grades", "2"),
                 ("Check myUNC Student Evaluation", "3"),
-                ("Export OES Available SCIS Subjects (CSV)", "6"),
+                ("Export OES Available Subjects (CSV)", "6"),
             ],
             carousel=True,
         )
@@ -226,7 +226,7 @@ def scrape_multiple():
             "2": (check_transcript, "Check myUNC Transcript of Grades"),
             "3": (check_evaluation, "Check myUNC Student Evaluation"),
             "5": (generate_oes_schedule, "Generate OES Enrolled Premat Schedule (ICS)"),
-            "6": (generate_oes_available_subjects, "Export OES Available SCIS Subjects (CSV)"),
+            "6": (generate_oes_available_subjects, "Export OES Available Subjects (CSV)"),
             "7": (generate_oes_block_schedules, "Generate OES Block Schedules (PNG)"),
         }
         
@@ -286,6 +286,11 @@ def main():
     parser.add_argument("-a", "--all", action="store_true", help="Run all scrapers")
     parser.add_argument("--oes-schedule", action="store_true", help="Generate OES Enrolled Schedule ICS")
     parser.add_argument("--oes-available", action="store_true", help="Export OES Available Subjects to CSV")
+    parser.add_argument(
+        "--depts",
+        type=str,
+        help="Comma-separated list of departments to scan (e.g., SCIS,CAS) when using --oes-available"
+    )
     parser.add_argument("--oes-block-sched", action="store_true", help="Generate OES Block Schedules (from CSV & Prospectus)")
     parser.add_argument("--oes-block-sched-ics", action="store_true", help="Generate OES Block Schedules as ICS (from CSV & Prospectus)")
 
@@ -308,7 +313,7 @@ def main():
                     choices=[
                         ("Check myUNC Transcript of Grades (notify on change)", "2"),
                         ("Check myUNC Student Evaluation (notify on change)", "3"),
-                        ("Export OES Available SCIS Subjects (CSV)", "6"),
+                        ("Export OES Available Subjects (CSV)", "6"),
                         ("Generate myUNC Schedule (ICS)", "1"),
                         ("Generate OES Enrolled Premat Schedule (ICS)", "5"),
                         ("Generate OES Block Schedules (PNG)", "7"),
@@ -334,7 +339,7 @@ def main():
                     "3": (check_evaluation, "Check myUNC Student Evaluation"),
                     "4": (scrape_multiple, "Scrape Multiple"),
                     "5": (generate_oes_schedule, "Generate OES Enrolled Premat Schedule (ICS)"),
-                    "6": (generate_oes_available_subjects, "Export OES Available SCIS Subjects (CSV)"),
+                    "6": (generate_oes_available_subjects, "Export OES Available Subjects (CSV)"),
                     "7": (generate_oes_block_schedules, "Generate OES Block Schedules (PNG)"),
                     "9": (generate_oes_block_schedules_ics, "Generate OES Block Schedules (ICS)"),
                 }
@@ -356,9 +361,13 @@ def main():
         return
 
     # Run selected options
+    depts_list = None
+    if args.depts:
+        depts_list = [d.strip() for d in args.depts.split(",") if d.strip()]
+
     if args.all:
         try:
-            scrape_all(force=args.force)
+            scrape_all(force=args.force, departments=depts_list)
         except Exception as e:
             notify_error("scrape_all", e)
             raise
@@ -389,7 +398,7 @@ def main():
                 raise
         if args.oes_available:
             try:
-                generate_oes_available_subjects()
+                generate_oes_available_subjects(departments=depts_list)
             except Exception as e:
                 notify_error("oes_available", e)
                 raise
