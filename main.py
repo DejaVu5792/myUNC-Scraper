@@ -1,6 +1,9 @@
+#!/usr/bin/env python
+# PYTHON_ARGCOMPLETE_OK
 """CLI entry point for myUNC Scraper."""
 
 import argparse
+import argcomplete
 import os
 import sys
 import traceback
@@ -28,6 +31,7 @@ from change_detect import (
 )
 from notify import send_notification
 import block_sched_gen
+from subject_tracker import track_subjects_for_period
 import inquirer
 from inquirer.themes import BlueComposure
 
@@ -209,6 +213,23 @@ def generate_oes_block_schedules_ics(prospectus_path: str = None, year_level: st
     except Exception as e:
         print(f"Error: {e}")
 
+def run_subject_tracker(prospectus_path: str = None, year_level: str = None, semester: str = None):
+    print("Running Subject Tracker...")
+    if not prospectus_path or not year_level or not semester:
+        prospectus_path, period = select_prospectus_and_period()
+        if not prospectus_path or not period:
+            return
+        year_level, semester = period
+        
+    try:
+        success = track_subjects_for_period(year_level, semester, prospectus_path, "data/available_subjects.csv")
+        if success:
+            print(f"Done. Subject tracking report generated.")
+        else:
+            print("Could not run subject tracker.")
+    except Exception as e:
+        print(f"Error: {e}")
+
 
 def scrape_all(force: bool = False, departments: list[str] = None):
 
@@ -256,6 +277,7 @@ def scrape_multiple():
             "5": (generate_oes_schedule, "Generate OES Enrolled Premat Schedule (ICS)"),
             "6": (generate_oes_available_subjects, "Export OES Available Subjects (CSV)"),
             "7": (generate_oes_block_schedules, "Generate OES Block Schedules (PNG)"),
+            "10": (run_subject_tracker, "Run Subject Tracker"),
         }
         
         for task_id in selected:
@@ -321,6 +343,7 @@ def main():
     )
     parser.add_argument("--oes-block-sched", action="store_true", help="Generate OES Block Schedules (from CSV & Prospectus)")
     parser.add_argument("--oes-block-sched-ics", action="store_true", help="Generate OES Block Schedules as ICS (from CSV & Prospectus)")
+    parser.add_argument("--track-subjects", action="store_true", help="Run Subject Tracker")
     parser.add_argument(
         "--prospectus",
         type=str,
@@ -367,6 +390,7 @@ def main():
         type=str,
         help="OES Password override"
     )
+    argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
     if args.myunc_username:
@@ -379,7 +403,7 @@ def main():
         os.environ["UNC_OES_PASSWORD"] = args.oes_password
 
     # If no flags provided, run interactive menu
-    if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available, args.oes_block_sched, args.oes_block_sched_ics]):
+    if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available, args.oes_block_sched, args.oes_block_sched_ics, args.track_subjects]):
 
         while True:
             questions = [
@@ -394,6 +418,7 @@ def main():
                         ("Generate OES Enrolled Premat Schedule (ICS)", "5"),
                         ("Generate OES Block Schedules (PNG)", "7"),
                         ("Generate OES Block Schedules (ICS)", "9"),
+                        ("Run Subject Tracker", "10"),
                         ("Scrape Multiple", "4"),
                         ("Exit", "8"),
                     ],
@@ -418,6 +443,7 @@ def main():
                     "6": (generate_oes_available_subjects, "Export OES Available Subjects (CSV)"),
                     "7": (generate_oes_block_schedules, "Generate OES Block Schedules (PNG)"),
                     "9": (generate_oes_block_schedules_ics, "Generate OES Block Schedules (ICS)"),
+                    "10": (run_subject_tracker, "Run Subject Tracker"),
                 }
 
                 action_info = actions.get(choice)
@@ -497,6 +523,16 @@ def main():
                 )
             except Exception as e:
                 notify_error("oes_block_sched-ics", e)
+                raise
+        if args.track_subjects:
+            try:
+                run_subject_tracker(
+                    prospectus_path=args.prospectus,
+                    year_level=args.year_level,
+                    semester=args.semester
+                )
+            except Exception as e:
+                notify_error("track_subjects", e)
                 raise
 
 
