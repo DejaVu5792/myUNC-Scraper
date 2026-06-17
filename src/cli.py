@@ -4,12 +4,13 @@
 
 import argparse
 import argcomplete
+from argcomplete.completers import ChoicesCompleter
 import os
 import sys
 import traceback
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent / "src"))
+sys.path.insert(0, str(Path(__file__).parent))
 
 from scraper import (
     scrape_schedule,
@@ -316,6 +317,12 @@ def execute_with_ui(action, title):
 
 
 
+def prospectus_completer(prefix, **kwargs):
+    prospectus_dir = Path("prospectus")
+    if prospectus_dir.exists():
+        return [str(p) for p in prospectus_dir.glob("*.csv") if str(p).startswith(prefix)]
+    return []
+
 def main():
     parser = argparse.ArgumentParser(description="myUNC Scraper")
     parser.add_argument(
@@ -348,17 +355,17 @@ def main():
         "--prospectus",
         type=str,
         help="Path to prospectus CSV file (e.g., prospectus/it_prospectus.csv) to use with block schedule generation"
-    )
+    ).completer = prospectus_completer
     parser.add_argument(
         "--year-level",
         type=str,
-        help="Year level for block schedule generation (e.g., 'First Year')"
-    )
+        help="Year level for block schedule generation (e.g., 'First Year' or '1st Year')"
+    ).completer = ChoicesCompleter(["First Year", "Second Year", "Third Year", "Fourth Year", "Fifth Year", "1st Year", "2nd Year", "3rd Year", "4th Year", "5th Year"])
     parser.add_argument(
         "--semester",
         type=str,
-        help="Semester for block schedule generation (e.g., 'First Semester')"
-    )
+        help="Semester for block schedule generation (e.g., 'First Semester' or '1st Semester')"
+    ).completer = ChoicesCompleter(["First Semester", "Second Semester", "Summer", "1st Semester", "2nd Semester"])
 
     parser.add_argument(
         "-f",

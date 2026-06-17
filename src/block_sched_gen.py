@@ -58,6 +58,11 @@ def titles_match(prop_title, oes_title):
             return True
     return False
 
+def normalize_period_string(s):
+    if pd.isna(s): return ""
+    s = str(s).lower().strip()
+    return s.replace("first", "1st").replace("second", "2nd").replace("third", "3rd").replace("fourth", "4th").replace("fifth", "5th")
+
 def time_to_hours(t_str):
     """Converts a time string like '06:30PM' into a float number of hours (18.5)."""
     t = datetime.datetime.strptime(t_str.replace(" ", ""), "%I:%M%p")
@@ -155,7 +160,10 @@ def generate_schedules_for_period(year_level, semester, prospectus_path="prospec
     prop_df = pd.read_csv(prospectus_path)
     avail_df = pd.read_csv(avail_path)
     
-    period_prop = prop_df[(prop_df['year level'] == year_level) & (prop_df['semester'] == semester)]
+    period_prop = prop_df[
+        (prop_df['year level'].apply(normalize_period_string) == normalize_period_string(year_level)) & 
+        (prop_df['semester'].apply(normalize_period_string) == normalize_period_string(semester))
+    ]
     prop_descriptions = period_prop['subject description'].tolist()
     
     print(f"\nMatching available subjects for {year_level} - {semester}...")
@@ -331,7 +339,10 @@ def generate_ics_schedules_for_period(year_level, semester, prospectus_path="pro
     prop_df = pd.read_csv(prospectus_path)
     avail_df = pd.read_csv(avail_path)
     
-    period_prop = prop_df[(prop_df['year level'] == year_level) & (prop_df['semester'] == semester)]
+    period_prop = prop_df[
+        (prop_df['year level'].apply(normalize_period_string) == normalize_period_string(year_level)) & 
+        (prop_df['semester'].apply(normalize_period_string) == normalize_period_string(semester))
+    ]
     prop_descriptions = period_prop['subject description'].tolist()
     
     print(f"\nMatching available subjects for {year_level} - {semester}...")
