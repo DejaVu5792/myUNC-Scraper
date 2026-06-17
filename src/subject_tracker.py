@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 import json
-from block_sched_gen import titles_match, normalize_period_string
+from block_sched_gen import titles_match, normalize_year, normalize_semester
 from notify import send_notification
 from change_detect import get_stored_content, store_content
 
@@ -15,8 +15,8 @@ def track_subjects_for_period(year_level, semester, prospectus_path, avail_path=
     
     # Filter prospectus for the specified period (normalized to avoid mismatch)
     period_prop = prop_df[
-        (prop_df['year level'].apply(normalize_period_string) == normalize_period_string(year_level)) & 
-        (prop_df['semester'].apply(normalize_period_string) == normalize_period_string(semester))
+        (prop_df['year level'].apply(normalize_year) == normalize_year(year_level)) & 
+        (prop_df['semester'].apply(normalize_semester) == normalize_semester(semester))
     ]
     
     if period_prop.empty:

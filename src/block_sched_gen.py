@@ -58,10 +58,23 @@ def titles_match(prop_title, oes_title):
             return True
     return False
 
-def normalize_period_string(s):
-    if pd.isna(s): return ""
+def normalize_year(y):
+    if pd.isna(y): return -1
+    y = str(y).lower().strip()
+    if '1' in y or 'first' in y: return 1
+    if '2' in y or 'second' in y: return 2
+    if '3' in y or 'third' in y: return 3
+    if '4' in y or 'fourth' in y: return 4
+    if '5' in y or 'fifth' in y: return 5
+    return -1
+
+def normalize_semester(s):
+    if pd.isna(s): return -1
     s = str(s).lower().strip()
-    return s.replace("first", "1st").replace("second", "2nd").replace("third", "3rd").replace("fourth", "4th").replace("fifth", "5th")
+    if '3' in s or 'summer' in s: return 3
+    if '1' in s or 'first' in s: return 1
+    if '2' in s or 'second' in s: return 2
+    return -1
 
 def time_to_hours(t_str):
     """Converts a time string like '06:30PM' into a float number of hours (18.5)."""
@@ -161,8 +174,8 @@ def generate_schedules_for_period(year_level, semester, prospectus_path="prospec
     avail_df = pd.read_csv(avail_path)
     
     period_prop = prop_df[
-        (prop_df['year level'].apply(normalize_period_string) == normalize_period_string(year_level)) & 
-        (prop_df['semester'].apply(normalize_period_string) == normalize_period_string(semester))
+        (prop_df['year level'].apply(normalize_year) == normalize_year(year_level)) & 
+        (prop_df['semester'].apply(normalize_semester) == normalize_semester(semester))
     ]
     prop_descriptions = period_prop['subject description'].tolist()
     
@@ -340,8 +353,8 @@ def generate_ics_schedules_for_period(year_level, semester, prospectus_path="pro
     avail_df = pd.read_csv(avail_path)
     
     period_prop = prop_df[
-        (prop_df['year level'].apply(normalize_period_string) == normalize_period_string(year_level)) & 
-        (prop_df['semester'].apply(normalize_period_string) == normalize_period_string(semester))
+        (prop_df['year level'].apply(normalize_year) == normalize_year(year_level)) & 
+        (prop_df['semester'].apply(normalize_semester) == normalize_semester(semester))
     ]
     prop_descriptions = period_prop['subject description'].tolist()
     
