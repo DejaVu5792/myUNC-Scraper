@@ -1,7 +1,7 @@
 [project]
 name = "myunc-scraper"
-version = "1.0.0"
-description = "Scraper for my.unc.edu.ph with schedule ICS export and change notifications"
+version = "2.0.0"
+description = "Scraper for UNC's web portal and OES"
 readme = "README.md"
 requires-python = ">=3.13"
 dependencies = [
