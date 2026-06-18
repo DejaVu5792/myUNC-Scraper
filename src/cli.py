@@ -323,6 +323,19 @@ def prospectus_completer(prefix, **kwargs):
         return [str(p) for p in prospectus_dir.glob("*.csv") if str(p).startswith(prefix)]
     return []
 
+def depts_completer(prefix, **kwargs):
+    depts = ["SCIS", "CAS", "CEA", "CBA", "COED", "CON", "CCJE", "NSTP"]
+    if not prefix:
+        return depts
+    parts = prefix.split(",")
+    base = ",".join(parts[:-1])
+    if base:
+        base += ","
+    current_word = parts[-1]
+    
+    matches = [base + d for d in depts if d.lower().startswith(current_word.lower())]
+    return matches
+
 def main():
     parser = argparse.ArgumentParser(description="myUNC Scraper")
     parser.add_argument(
@@ -347,7 +360,7 @@ def main():
         "--depts",
         type=str,
         help="Comma-separated list of departments to scan (e.g., SCIS,CAS) when using --oes-available"
-    )
+    ).completer = depts_completer
     parser.add_argument("--oes-block-sched", action="store_true", help="Generate OES Block Schedules (from CSV & Prospectus)")
     parser.add_argument("--oes-block-sched-ics", action="store_true", help="Generate OES Block Schedules as ICS (from CSV & Prospectus)")
     parser.add_argument("--track-subjects", action="store_true", help="Run Subject Tracker")
