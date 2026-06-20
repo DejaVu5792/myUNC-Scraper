@@ -458,6 +458,9 @@ def export_available_subjects_to_csv(subjects: list[dict], output_path: str = "d
         )
         merged[key] = sub
         
+    added_list = []
+    updated_list = []
+
     # Overwrite with newly scraped subjects (preserves updated fields and adds new rows)
     for sub in subjects:
         key = (
@@ -466,6 +469,19 @@ def export_available_subjects_to_csv(subjects: list[dict], output_path: str = "d
             str(sub.get("type", "")).strip(),
             str(sub.get("room", "")).strip()
         )
+        if key not in merged:
+            added_list.append(sub)
+        else:
+            old_sub = merged[key]
+            field_changes = {}
+            for field in ["dept", "course_no", "unit", "title", "teacher", "tally"]:
+                old_val = str(old_sub.get(field, "")).strip()
+                new_val = str(sub.get(field, "")).strip()
+                if old_val != new_val:
+                    field_changes[field] = (old_val, new_val)
+            if field_changes:
+                updated_list.append((sub, field_changes))
+        
         merged[key] = sub
         
     # Convert back to list, preserving order or sorting by dept, title, code, schedule
@@ -485,4 +501,22 @@ def export_available_subjects_to_csv(subjects: list[dict], output_path: str = "d
         dict_writer.writerows(deduped_subjects)
         
     print(f"Exported {len(deduped_subjects)} available subjects to {output_path} (merged new scrape, was {len(existing_subjects)} existing)")
+    
+    if added_list or updated_list:
+        print("\n--- Changes to Available Subjects CSV ---")
+        if added_list:
+            print(f"Added {len(added_list)} new subjects:")
+            for sub in added_list:
+                print(f"  + [{sub.get('dept', '')}] {sub.get('code', '')} - {sub.get('course_no', '')} ({sub.get('title', '')}) | Schedule: {sub.get('schedule', '')} | Room: {sub.get('room', '')} | Teacher: {sub.get('teacher', '')} | Tally: {sub.get('tally', '')}")
+        if updated_list:
+            print(f"Updated {len(updated_list)} subjects:")
+            for sub, field_changes in updated_list:
+                changes_str = ", ".join(f"{field}: '{old}' -> '{new}'" for field, (old, new) in field_changes.items())
+                print(f"  ~ {sub.get('code', '')} - {sub.get('course_no', '')} ({sub.get('title', '')}) | Schedule: {sub.get('schedule', '')} | Room: {sub.get('room', '')} | Changes: {changes_str}")
+        print("-----------------------------------------\n")
+    else:
+        print("\n--- Changes to Available Subjects CSV ---")
+        print("No changes detected.")
+        print("-----------------------------------------\n")
+
     return output_path
