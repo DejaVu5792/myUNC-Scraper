@@ -336,6 +336,23 @@ def depts_completer(prefix, **kwargs):
     matches = [base + d for d in depts if d.lower().startswith(current_word.lower())]
     return matches
 
+LAST_CHOICE_FILE = Path(__file__).parent.parent / "data" / "update_checks" / "last_choice.txt"
+
+def get_last_choice() -> str:
+    try:
+        if LAST_CHOICE_FILE.exists():
+            return LAST_CHOICE_FILE.read_text().strip()
+    except Exception:
+        pass
+    return "2"
+
+def save_last_choice(choice: str) -> None:
+    try:
+        LAST_CHOICE_FILE.parent.mkdir(parents=True, exist_ok=True)
+        LAST_CHOICE_FILE.write_text(choice)
+    except Exception:
+        pass
+
 def main():
     parser = argparse.ArgumentParser(description="myUNC Scraper")
     parser.add_argument(
@@ -425,6 +442,11 @@ def main():
     # If no flags provided, run interactive menu
     if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available, args.oes_block_sched, args.oes_block_sched_ics, args.track_subjects]):
 
+        default_choice = get_last_choice()
+        valid_choices = ["1", "2", "3", "4", "5", "6", "7", "9", "10", "8"]
+        if default_choice not in valid_choices:
+            default_choice = "2"
+
         while True:
             questions = [
                 inquirer.List(
@@ -442,6 +464,7 @@ def main():
                         ("Scrape Multiple", "4"),
                         ("Exit", "8"),
                     ],
+                    default=default_choice,
                     carousel=True,
                 )
             ]
@@ -453,6 +476,8 @@ def main():
                 if choice == "8":
                     print("Bye.")
                     break
+                default_choice = choice
+                save_last_choice(choice)
 
                 actions = {
                     "1": (generate_schedule, "Generate myUNC Schedule (ICS)"),

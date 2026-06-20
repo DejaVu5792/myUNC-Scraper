@@ -330,16 +330,11 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
     # If not provided, or resolved to empty, try to prompt/default
     if not selected_depts:
         if sys.stdin.isatty():
-            # Find the default to pre-select (SCIS/CS)
-            scis_val = next((val for text, val in options if "COMPUTER" in text.upper() or val == "CS"), None)
-            default_selections = [scis_val] if scis_val else []
-            
             questions = [
                 inquirer.Checkbox(
                     "depts",
                     message="Select departments to scan (Space to toggle, Enter to confirm)",
                     choices=options,
-                    default=default_selections,
                     carousel=True,
                 )
             ]
@@ -352,11 +347,7 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
         
         # If still empty (e.g. non-interactive or prompt skipped/cancelled)
         if not selected_depts:
-            scis_val = next((val for text, val in options if "COMPUTER" in text.upper() or val == "CS"), None)
-            if scis_val:
-                selected_depts = [scis_val]
-                print(f"Defaulting to scan SCIS department (Value: {scis_val}).")
-            elif options:
+            if options:
                 selected_depts = [options[0][1]]
                 print(f"Defaulting to scan first department: {options[0][0]} (Value: {options[0][1]}).")
 
