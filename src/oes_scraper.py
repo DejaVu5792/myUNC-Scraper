@@ -4,6 +4,7 @@ import os
 import csv
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright, Page, Browser
+from playwright_stealth import Stealth
 from bs4 import BeautifulSoup
 
 load_dotenv()
@@ -77,7 +78,7 @@ def get_enrolled_subjects(page: Page) -> str:
     return page.content()
 
 def scrape_oes_enrolled_schedule() -> str:
-    with sync_playwright() as p:
+    with Stealth().use_sync(sync_playwright()) as p:
         browser, context = launch_browser(p)
         page = create_page(context)
         try:
@@ -397,7 +398,7 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
     return all_subjects
 
 def scrape_oes_available_subjects(departments: list[str] = None) -> list[dict]:
-    with sync_playwright() as p:
+    with Stealth().use_sync(sync_playwright()) as p:
         browser, context = launch_browser(p)
         page = create_page(context)
         try:

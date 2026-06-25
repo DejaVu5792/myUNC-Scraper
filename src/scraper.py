@@ -3,6 +3,7 @@
 import os
 from dotenv import load_dotenv
 from playwright.sync_api import sync_playwright, Page, Browser
+from playwright_stealth import Stealth
 
 load_dotenv()
 
@@ -97,7 +98,7 @@ def get_evaluation_all_years(page: Page) -> dict[str, str]:
 
 
 def scrape_schedule() -> str:
-    with sync_playwright() as p:
+    with Stealth().use_sync(sync_playwright()) as p:
         browser, context = launch_browser(p)
         page = context.new_page()
         try:
@@ -109,7 +110,7 @@ def scrape_schedule() -> str:
 
 
 def scrape_transcript() -> str:
-    with sync_playwright() as p:
+    with Stealth().use_sync(sync_playwright()) as p:
         browser, context = launch_browser(p)
         page = context.new_page()
         try:
@@ -121,7 +122,7 @@ def scrape_transcript() -> str:
 
 
 def scrape_evaluation() -> dict[str, str]:
-    with sync_playwright() as p:
+    with Stealth().use_sync(sync_playwright()) as p:
         browser, context = launch_browser(p)
         page = context.new_page()
         try:
