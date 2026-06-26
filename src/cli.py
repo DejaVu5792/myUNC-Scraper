@@ -398,6 +398,11 @@ def main():
     ).completer = ChoicesCompleter(["First Semester", "Second Semester", "Summer", "1st Semester", "2nd Semester"])
 
     parser.add_argument(
+        "--headful",
+        action="store_true",
+        help="Run browser in headful (headed) mode"
+    )
+    parser.add_argument(
         "-f",
         "--force",
         action="store_true",
@@ -430,6 +435,9 @@ def main():
     argcomplete.autocomplete(parser)
     args = parser.parse_args()
 
+    if args.headful:
+        os.environ["HEADLESS"] = "false"
+
     if args.myunc_username:
         os.environ["UNC_USERNAME"] = args.myunc_username
     if args.myunc_password:
@@ -441,9 +449,11 @@ def main():
 
     # If no flags provided, run interactive menu
     if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available, args.oes_block_sched, args.oes_block_sched_ics, args.track_subjects]):
+        if "HEADLESS" not in os.environ:
+            os.environ["HEADLESS"] = "false"  # Default to headful in TUI
 
         default_choice = get_last_choice()
-        valid_choices = ["1", "2", "3", "4", "5", "6", "7", "9", "10", "8"]
+        valid_choices = ["1", "2", "3", "4", "5", "6", "7", "9", "10", "8", "toggle_headful"]
         if default_choice not in valid_choices:
             default_choice = "2"
 
@@ -453,6 +463,7 @@ def main():
                     "choice",
                     message="=== myUNC Scraper ===",
                     choices=[
+                        ("[X] Headful Mode" if os.environ.get("HEADLESS") == "false" else "[ ] Headful Mode", "toggle_headful"),
                         ("Check myUNC Transcript of Grades (notify on change)", "2"),
                         ("Check myUNC Student Evaluation (notify on change)", "3"),
                         ("Export OES Available Subjects (CSV)", "6"),
@@ -476,6 +487,12 @@ def main():
                 if choice == "8":
                     print("Bye.")
                     break
+                if choice == "toggle_headful":
+                    current_headless = os.environ.get("HEADLESS", "false")
+                    os.environ["HEADLESS"] = "true" if current_headless == "false" else "false"
+                    default_choice = "toggle_headful"
+                    continue
+
                 default_choice = choice
                 save_last_choice(choice)
 
