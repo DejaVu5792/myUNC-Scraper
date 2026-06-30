@@ -453,6 +453,49 @@ def parse_available_subjects(html: str) -> list[dict]:
             })
     return subjects
 
+def select_take_subject_option(page: Page, timeout: int = 5000) -> bool:
+    """Helper to find and select the 'Take Subject' or 'Request' option in the radio list."""
+    try:
+        # Wait up to 2 seconds for a label containing rbtListReqType to be attached
+        try:
+            page.locator('label[for*="rbtListReqType"]').first.wait_for(state="attached", timeout=2000)
+        except Exception:
+            pass
+
+        # Inspect all labels on the page
+        locator = page.locator('label')
+        count = locator.count()
+        for i in range(count):
+            lbl = locator.nth(i)
+            text = lbl.inner_text().strip().lower()
+            for_attr = lbl.get_attribute("for") or ""
+            if "rbtlistreqtype" in for_attr.lower():
+                if "take subject" in text or "request" in text:
+                    print(f"Found request option label: '{lbl.inner_text()}' (for='{for_attr}'), clicking...")
+                    lbl.click(timeout=timeout)
+                    return True
+                    
+        # Text-only fallback: only search for specific options, never search for generic "Request" to avoid header links
+        for label_text in ["Take Subject", "Requesting of Subject", "Requesting of Subjects"]:
+            lbl = page.get_by_text(label_text, exact=False)
+            if lbl.count() > 0:
+                for idx in range(lbl.count()):
+                    item = lbl.nth(idx)
+                    if item.is_visible():
+                        print(f"Found visible text element '{label_text}', clicking...")
+                        item.click(timeout=timeout)
+                        return True
+    except Exception as e:
+        print(f"Warning in select_take_subject_option: {e}")
+    
+    # Ultimate fallback to label_3
+    try:
+        page.locator('label[for="enrollmentHolder_rbtListReqType_3"]').click(timeout=timeout)
+        return True
+    except:
+        pass
+    return False
+
 def get_available_subjects(page: Page, departments: list[str] = None) -> list[dict]:
     # Request tab
     page.locator('a[href*="Request.aspx"]').first.click()
@@ -469,10 +512,7 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
         
         # If we are on Registration-Application.aspx, select the "Take Subject" option if visible
         if "Registration-Application.aspx" in current_url:
-            try:
-                page.locator('label[for="enrollmentHolder_rbtListReqType_3"]').click(timeout=3000)
-            except:
-                pass
+            select_take_subject_option(page, timeout=3000)
                 
         # Try to click any "Next", "Confirm", or "Save" button to proceed
         clicked_next = False
@@ -495,10 +535,7 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
     # Now we are on Request.aspx (or as close as we can get)
     if "Request.aspx" in page.url:
         # Select the "Take Subject" radio button on Request.aspx if needed
-        try:
-            page.locator('label[for="enrollmentHolder_rbtListReqType_3"]').click(timeout=5000)
-        except Exception as e:
-            print(f"Failed selecting request subject on Request page: {e}")
+        select_take_subject_option(page, timeout=5000)
             
         print("Type of SelectRequestType before click:", page.evaluate("typeof SelectRequestType"))
         
