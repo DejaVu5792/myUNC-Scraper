@@ -381,11 +381,31 @@ def scrape_multiple():
 
 # The user wants log outputs encased in a styled box.
 
+def print_headful_disclaimer():
+    yellow = "\033[1;33m"
+    reset = "\033[0m"
+    print(f"{yellow}┏━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┓")
+    print(f"┃                            DISCLAIMER                              ┃")
+    print(f"┃ A browser window will open in headful mode. Please do NOT close or ┃")
+    print(f"┃ interact with it. The scraper will manage it automatically.        ┃")
+    print(f"┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛{reset}\n")
+
 def execute_with_ui(action, title):
     import os
     print("\n" + "┏" + "━" * 68 + "┓")
     print(f"┃ {title.ljust(66)} ┃")
     print("┗" + "━" * 68 + "┛\n")
+    
+    is_browser_task = action.__name__ in [
+        "generate_schedule",
+        "check_transcript",
+        "check_evaluation",
+        "generate_oes_schedule",
+        "generate_oes_available_subjects",
+        "scrape_multiple"
+    ]
+    if os.environ.get("HEADLESS") == "false" and is_browser_task:
+        print_headful_disclaimer()
     
     try:
         action()
@@ -617,6 +637,9 @@ def main():
         return
 
     # Run selected options
+    if os.environ.get("HEADLESS") == "false" and any([args.all, args.schedule, args.transcript, args.evaluation, args.oes_schedule, args.oes_available]):
+        print_headful_disclaimer()
+
     depts_list = None
     if args.depts:
         depts_list = [d.strip() for d in args.depts.split(",") if d.strip()]
