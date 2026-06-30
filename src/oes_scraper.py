@@ -101,6 +101,13 @@ class StealthBrowserSession:
         ]
         if self.headless:
             cmd.append("--headless=new")
+            cmd.append("--window-size=1920,1080")
+        else:
+            # In headed mode, use a standard layout size (1024x768) to ensure all elements render properly
+            cmd.append("--window-size=1024,768")
+            cmd.append("--window-position=0,0")
+        if not ua and self.headless:
+            ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
         if ua:
             cmd.append(f"--user-agent={ua}")
             
@@ -122,6 +129,8 @@ class StealthBrowserSession:
             cookies, ua = None, None
             if self.target_url and self.headless:
                 cookies, ua = get_flaresolverr_session_info(self.target_url)
+            if not ua and self.headless:
+                ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36"
             if ua:
                 context = self.browser.new_context(user_agent=ua)
             else:
@@ -143,7 +152,10 @@ class StealthBrowserSession:
             return self.browser, context
             
         self.browser = self.playwright.chromium.connect_over_cdp(f"http://127.0.0.1:{port}")
-        context = self.browser.contexts[0] if self.browser.contexts else self.browser.new_context()
+        if ua:
+            context = self.browser.new_context(user_agent=ua)
+        else:
+            context = self.browser.contexts[0] if self.browser.contexts else self.browser.new_context()
         
         if cookies:
             playwright_cookies = []
@@ -184,93 +196,137 @@ def solve_turnstile_if_present(page: Page, timeout_sec: int = 20) -> bool:
         return True
         
     print("Cloudflare Turnstile challenge detected. Attempting bypass...")
-    turnstile_frame = None
+    
+    # Wait for turnstile frame to be available
+    outer_frame = None
     for _ in range(timeout_sec):
         for frame in page.frames:
-            if "challenges.cloudflare.com" in frame.url:
-                turnstile_frame = frame
+            if "challenges.cloudflare.com" in frame.url and (frame.parent_frame == page.main_frame or frame.parent_frame is None):
+                outer_frame = frame
                 break
-        if turnstile_frame:
+        if outer_frame:
             break
         page.wait_for_timeout(1000)
         
-    if not turnstile_frame:
+    if not outer_frame:
         print("Turnstile frame not found. Waiting for automatic solve...")
         if "Just a moment" not in page.title():
             return True
         return False
         
-    print(f"Found Turnstile frame: {turnstile_frame.url[:80]}...")
-    
-    # Get iframe element bounding box on main page
-    iframe_box = None
-    try:
-        iframe_element = turnstile_frame.frame_element()
-        if iframe_element:
-            iframe_box = iframe_element.bounding_box()
-    except Exception as e:
-        print(f"Error getting Turnstile frame bounding box: {e}")
-        
-    if not iframe_box:
-        print("Could not find Turnstile iframe element bounding box. Waiting for automatic solve...")
-    else:
-        # Get checkbox relative coordinates inside iframe
-        js_find_cb = """
-        () => {
-            function findCheckbox(root) {
-                if (!root) return null;
-                const el = root.querySelector('input[type="checkbox"]');
-                if (el) return el;
-                const all = root.querySelectorAll('*');
-                for (let i = 0; i < all.length; i++) {
-                    const el = all[i];
-                    if (el.shadowRoot) {
-                        const found = findCheckbox(el.shadowRoot);
-                        if (found) return found;
+    print(f"Found Turnstile frame: {outer_frame.url[:80]}...")
+    page.wait_for_timeout(1500)
+
+    # Try native Playwright locator first inside ANY challenges.cloudflare.com frame (handles nesting and async loading)
+    clicked_native = False
+    for attempt in range(10):
+        for frame in page.frames:
+            if "challenges.cloudflare.com" not in frame.url:
+                continue
+            for selector in ['input[type="checkbox"]', '#checkbox', '.ctp-checkbox-label', '.ctp-checkbox-container', '.checkbox', '#challenge-stage']:
+                try:
+                    loc = frame.locator(selector).first
+                    if loc.count() > 0:
+                        print(f"Found Turnstile checkbox in frame via selector '{selector}' on attempt {attempt+1}, clicking...")
+                        loc.click(timeout=3000, force=True)
+                        clicked_native = True
+                        break
+                except Exception:
+                    pass
+            if clicked_native:
+                break
+        if clicked_native:
+            break
+        page.wait_for_timeout(1000)
+
+    if not clicked_native:
+        # Get outer iframe element bounding box on main page
+        iframe_box = None
+        try:
+            iframe_element = outer_frame.frame_element()
+            if iframe_element:
+                iframe_box = iframe_element.bounding_box()
+        except Exception as e:
+            print(f"Error getting Turnstile frame bounding box: {e}")
+            
+        if not iframe_box:
+            print("Could not find Turnstile iframe element bounding box. Waiting for automatic solve...")
+        else:
+            # Try to resolve relative coordinates inside the innermost challenges frame
+            js_find_cb = """
+            () => {
+                function findCheckbox(root) {
+                    if (!root) return null;
+                    const selectors = ['input[type="checkbox"]', '#checkbox', '[class*="checkbox"]', '#challenge-stage'];
+                    for (const sel of selectors) {
+                        const el = root.querySelector(sel);
+                        if (el) return el;
                     }
+                    const all = root.querySelectorAll('*');
+                    for (let i = 0; i < all.length; i++) {
+                        const el = all[i];
+                        if (el.shadowRoot) {
+                            const found = findCheckbox(el.shadowRoot);
+                            if (found) return found;
+                        }
+                    }
+                    return null;
+                }
+                const cb = findCheckbox(document);
+                if (cb) {
+                    const rect = cb.getBoundingClientRect();
+                    return {
+                        x: rect.left,
+                        y: rect.top,
+                        width: rect.width,
+                        height: rect.height
+                    };
                 }
                 return null;
             }
-            const cb = findCheckbox(document);
-            if (cb) {
-                const rect = cb.getBoundingClientRect();
-                return {
-                    x: rect.left,
-                    y: rect.top,
-                    width: rect.width,
-                    height: rect.height
-                };
-            }
-            return null;
-        }
-        """
-        
-        cb_rect = None
-        for _ in range(10):
-            try:
-                cb_rect = turnstile_frame.evaluate(js_find_cb)
-                if cb_rect:
-                    break
-            except Exception as e:
-                pass
-            page.wait_for_timeout(1000)
+            """
             
-        if cb_rect:
-            # Calculate absolute coordinates
-            click_x = iframe_box['x'] + cb_rect['x'] + cb_rect['width'] / 2
-            click_y = iframe_box['y'] + cb_rect['y'] + cb_rect['height'] / 2
-            
-            print(f"Clicking Turnstile checkbox at page coordinates: ({click_x}, {click_y})")
-            try:
-                page.mouse.move(click_x, click_y)
-                page.wait_for_timeout(300)
-                page.mouse.down()
-                page.wait_for_timeout(100)
-                page.mouse.up()
-            except Exception as e:
-                print(f"Failed coordinate click: {e}")
-        else:
-            print("Could not find checkbox inside Turnstile frame. Waiting for automatic solve...")
+            cb_rect = None
+            active_frame = outer_frame
+            for frame in page.frames:
+                if "challenges.cloudflare.com" not in frame.url:
+                    continue
+                try:
+                    res = frame.evaluate(js_find_cb)
+                    if res:
+                        cb_rect = res
+                        active_frame = frame
+                        break
+                except:
+                    pass
+                    
+            if cb_rect:
+                # Calculate absolute coordinates
+                click_x = iframe_box['x'] + cb_rect['x'] + cb_rect['width'] / 2
+                click_y = iframe_box['y'] + cb_rect['y'] + cb_rect['height'] / 2
+                
+                print(f"Clicking Turnstile checkbox at page coordinates: ({click_x}, {click_y})")
+                try:
+                    page.mouse.move(click_x, click_y)
+                    page.wait_for_timeout(300)
+                    page.mouse.down()
+                    page.wait_for_timeout(100)
+                    page.mouse.up()
+                except Exception as e:
+                    print(f"Failed coordinate click: {e}")
+            else:
+                # Fallback click: click on the standard Turnstile checkbox position (x=45, y=centered)
+                click_x = iframe_box['x'] + 45
+                click_y = iframe_box['y'] + iframe_box['height'] / 2
+                print(f"Could not resolve checkbox element in DOM. Trying fallback click at standard Turnstile checkbox coordinates: ({click_x}, {click_y})")
+                try:
+                    page.mouse.move(click_x, click_y)
+                    page.wait_for_timeout(300)
+                    page.mouse.down()
+                    page.wait_for_timeout(100)
+                    page.mouse.up()
+                except Exception as e:
+                    print(f"Failed fallback coordinate click: {e}")
 
     # Wait for solve (title change or success element)
     for _ in range(15):
@@ -335,20 +391,39 @@ def login_oes(page: Page) -> None:
     if not username or not password:
         raise ValueError("UNC_OES_EMAIL and UNC_OES_PASSWORD must be set in .env")
 
+    # Diagnostic prints
+    try:
+        print(f"Browser User-Agent: {page.evaluate('navigator.userAgent')}")
+        print("Active Cookies:")
+        for c in page.context.cookies():
+            print(f"  {c['name']}: {c['value'][:15]}... ({c['domain']})")
+    except Exception as diag_err:
+        print(f"Failed loading diagnostics: {diag_err}")
+
     # Use load instead of networkidle to prevent Turnstile challenges from blocking page.goto completion
     page.goto(OES_BASE_URL, wait_until="load")
     
     # Solve Turnstile if present
     solve_turnstile_if_present(page)
 
+    # Wait for the login tab to become visible (handles redirect/load delay after solving Turnstile)
+    page.locator('//*[@id="nav-login-tab2"]').wait_for(state="visible", timeout=25000)
+
     # Click to continue with enrollment tab
     page.locator('//*[@id="nav-login-tab2"]').click()
-    page.wait_for_timeout(500) # Give the tab a moment to become visible
+    
+    # Wait for the email input field to become visible (handles tab fade-in animation)
+    page.locator('//*[@id="enrollmentHolder_txtEmailLogin"]').wait_for(state="visible", timeout=10000)
     
     # Use XPaths provided
     page.locator('//*[@id="enrollmentHolder_txtEmailLogin"]').fill(username)
     page.locator('//*[@id="enrollmentHolder_txtPasswordLogin"]').fill(password)
     page.locator('//*[@id="enrollmentHolder_btnLogin"]').click()
+    try:
+        # Wait up to 15 seconds for the page to navigate away from the login register URL
+        page.wait_for_url(lambda url: "Register.aspx" not in url, timeout=15000)
+    except Exception as e:
+        print(f"Warning: Login redirect did not complete within timeout: {e}")
     page.wait_for_load_state("networkidle")
 
 def get_enrolled_subjects(page: Page) -> str:
@@ -497,9 +572,12 @@ def select_take_subject_option(page: Page, timeout: int = 5000) -> bool:
     return False
 
 def get_available_subjects(page: Page, departments: list[str] = None) -> list[dict]:
-    # Request tab
-    page.locator('a[href*="Request.aspx"]').first.click()
-    page.wait_for_load_state("networkidle")
+    # Navigate to the Request page directly to avoid menu-navigation state bugs
+    request_url = "https://oes.unc.edu.ph/OES/Enrollment/Request.aspx"
+    if page.url != request_url:
+        print(f"Navigating directly to Request page: {request_url}")
+        page.goto(request_url, wait_until="load")
+        page.wait_for_load_state("networkidle")
     print(f"Request Tab Loaded URL: {page.url}")
     
     # Check if we are on intermediate wizard pages (like Registration-Application.aspx or Registration-PersonalInformation.aspx)
@@ -516,6 +594,13 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
                 
         # Try to click any "Next", "Confirm", or "Save" button to proceed
         clicked_next = False
+        
+        # Wait up to 3 seconds for proceed buttons to become visible/ready
+        try:
+            page.locator('#enrollmentHolder_btnNext2, #enrollmentHolder_btnNext, #enrollmentHolder_btnSave, #enrollmentHolder_btnConfirm').first.wait_for(state="visible", timeout=3000)
+        except Exception:
+            pass
+            
         for selector in ['#enrollmentHolder_btnNext2', '#enrollmentHolder_btnNext', '#enrollmentHolder_btnSave', '#enrollmentHolder_btnConfirm', 'input[value*="Next"]', 'input[value*="NEXT"]', 'button:has-text("Next")', 'button:has-text("NEXT")', 'input[value*="Confirm"]', 'button:has-text("Confirm")']:
             try:
                 loc = page.locator(selector)
@@ -537,6 +622,12 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
         # Select the "Take Subject" radio button on Request.aspx if needed
         select_take_subject_option(page, timeout=5000)
             
+        # Wait for jQuery/window.$ to be defined to prevent "$ is not defined" page script errors
+        try:
+            page.wait_for_function("typeof window.jQuery !== 'undefined' && typeof window.$ !== 'undefined'", timeout=5000)
+        except Exception as e:
+            print(f"Warning: jQuery did not load in time: {e}")
+
         print("Type of SelectRequestType before click:", page.evaluate("typeof SelectRequestType"))
         
         # Click NEXT button on Request.aspx (this has onclick="SelectRequestType();")
