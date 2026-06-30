@@ -122,6 +122,91 @@ def generate_oes_available_subjects(departments: list[str] = None):
         print("Could not export available subjects.")
 
 
+def select_printout_file() -> str:
+    """Helper to select a printout PDF or TXT file from data/ or enter a path."""
+    import os
+    data_dir = Path("data")
+    files = []
+    if data_dir.exists():
+        files = sorted(list(data_dir.glob("*.pdf")) + list(data_dir.glob("*.txt")))
+        
+    choices = [(f"{f.name}", str(f)) for f in files]
+    choices.append(("Enter custom path...", "custom"))
+    choices.append(("Back to main menu", None))
+    
+    questions = [
+        inquirer.List(
+            "file",
+            message="Select printout file",
+            choices=choices,
+            carousel=True,
+        )
+    ]
+    try:
+        answers = inquirer.prompt(questions, theme=BlueComposure())
+        if not answers or answers.get("file") is None:
+            return None
+            
+        selected = answers["file"]
+        if selected == "custom":
+            questions_custom = [
+                inquirer.Text(
+                    "path",
+                    message="Enter path to printout file (PDF or TXT)",
+                    validate=lambda _, x: os.path.exists(x) or "File does not exist!"
+                )
+            ]
+            answers_custom = inquirer.prompt(questions_custom, theme=BlueComposure())
+            if answers_custom:
+                return answers_custom["path"]
+            return None
+        return selected
+    except Exception as e:
+        print(f"Error selecting printout file: {e}")
+        return None
+
+
+def generate_schedule_from_printout(file_path: str = None):
+    print("Generating Schedule from Printout...")
+    import re
+    if not file_path:
+        file_path = select_printout_file()
+        if not file_path:
+            return
+            
+    try:
+        from printout_parser import parse_printout, generate_png_schedule, generate_ics_schedule
+        parsed = parse_printout(file_path)
+        
+        name_clean = "schedule"
+        if parsed.get("metadata") and parsed["metadata"].get("name"):
+            raw_name = parsed["metadata"]["name"]
+            raw_name = re.sub(r"\[.*?\]", "", raw_name)
+            name_clean = "".join(c if c.isalnum() or c in " _-" else "" for c in raw_name).strip().replace(" ", "_")
+            if not name_clean:
+                name_clean = "schedule"
+        
+        png_path = f"data/{name_clean}.png"
+        ics_path = f"data/{name_clean}.ics"
+        
+        png_res = generate_png_schedule(parsed, png_path)
+        ics_res = generate_ics_schedule(parsed, ics_path)
+        
+        if png_res:
+            print(f"Done. Schedule PNG saved to: {png_res}")
+        else:
+            print("Could not generate PNG schedule.")
+            
+        if ics_res:
+            print(f"Done. Schedule ICS saved to: {ics_res}")
+        else:
+            print("Could not generate ICS schedule.")
+            
+    except Exception as e:
+        print(f"Error generating schedule from printout: {e}")
+        raise e
+
+
 def select_prospectus_and_period() -> tuple[str, tuple[str, str]]:
     """Helper to select a prospectus file and a period.
     Returns (prospectus_path, (year_level, semester)) or (None, None).
@@ -382,6 +467,11 @@ def main():
     parser.add_argument("--oes-block-sched-ics", action="store_true", help="Generate OES Block Schedules as ICS (from CSV & Prospectus)")
     parser.add_argument("--track-subjects", action="store_true", help="Run Subject Tracker")
     parser.add_argument(
+        "--printout",
+        type=str,
+        help="Path to Certificate of Matriculation printout (PDF or TXT) to generate PNG/ICS schedule"
+    )
+    parser.add_argument(
         "--prospectus",
         type=str,
         help="Path to prospectus CSV file (e.g., prospectus/it_prospectus.csv) to use with block schedule generation"
@@ -448,12 +538,12 @@ def main():
         os.environ["UNC_OES_PASSWORD"] = args.oes_password
 
     # If no flags provided, run interactive menu
-    if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available, args.oes_block_sched, args.oes_block_sched_ics, args.track_subjects]):
+    if not any([args.schedule, args.transcript, args.evaluation, args.all, args.oes_schedule, args.oes_available, args.oes_block_sched, args.oes_block_sched_ics, args.track_subjects, args.printout]):
         if "HEADLESS" not in os.environ:
             os.environ["HEADLESS"] = "false"  # Default to headful in TUI
 
         default_choice = get_last_choice()
-        valid_choices = ["1", "2", "3", "4", "5", "6", "7", "9", "10", "8", "toggle_headful"]
+        valid_choices = ["1", "2", "3", "4", "5", "6", "7", "9", "10", "11", "8", "toggle_headful"]
         if default_choice not in valid_choices:
             default_choice = "2"
 
@@ -471,6 +561,7 @@ def main():
                         ("Generate OES Enrolled Premat Schedule (ICS)", "5"),
                         ("Generate OES Block Schedules (PNG)", "7"),
                         ("Generate OES Block Schedules (ICS)", "9"),
+                        ("Generate PNG/ICS Schedule from Printout", "11"),
                         ("Run Subject Tracker", "10"),
                         ("Scrape Multiple", "4"),
                         ("Exit", "8"),
@@ -506,6 +597,7 @@ def main():
                     "7": (generate_oes_block_schedules, "Generate OES Block Schedules (PNG)"),
                     "9": (generate_oes_block_schedules_ics, "Generate OES Block Schedules (ICS)"),
                     "10": (run_subject_tracker, "Run Subject Tracker"),
+                    "11": (generate_schedule_from_printout, "Generate PNG/ICS Schedule from Printout"),
                 }
 
                 action_info = actions.get(choice)
@@ -595,6 +687,14 @@ def main():
                 )
             except Exception as e:
                 notify_error("track_subjects", e)
+                raise
+        if args.printout:
+            try:
+                generate_schedule_from_printout(
+                    file_path=args.printout
+                )
+            except Exception as e:
+                notify_error("printout_schedule", e)
                 raise
 
 
