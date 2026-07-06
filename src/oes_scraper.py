@@ -84,7 +84,45 @@ class StealthBrowserSession:
         cookies, ua = None, None
         if self.target_url and self.headless:
             cookies, ua = get_flaresolverr_session_info(self.target_url)
-        
+            
+        # 2. Check if we should connect using Sock Puppet Browser
+        use_puppetbrowser = os.getenv("USE_PUPPETBROWSER", "false").lower() in ("true", "1", "yes")
+        if use_puppetbrowser:
+            puppetbrowser_url = os.getenv("PUPPETBROWSER_URL", "ws://localhost:3000")
+            params = []
+            if self.headless:
+                params.append("--window-size=1920,1080")
+            else:
+                params.append("--window-size=1024,768")
+                params.append("headful=true")
+            if params:
+                separator = "&" if "?" in puppetbrowser_url else "?"
+                puppetbrowser_url += separator + "&".join(params)
+                
+            print(f"Connecting to remote Sock Puppet Browser at {puppetbrowser_url}...")
+            self.browser = self.playwright.chromium.connect_over_cdp(endpoint_url=puppetbrowser_url)
+            if ua:
+                context = self.browser.new_context(user_agent=ua)
+            else:
+                context = self.browser.contexts[0] if self.browser.contexts else self.browser.new_context()
+                
+            if cookies:
+                playwright_cookies = []
+                for c in cookies:
+                    playwright_cookies.append({
+                        "name": c["name"],
+                        "value": c["value"],
+                        "domain": c["domain"],
+                        "path": c["path"],
+                        "expires": c.get("expiry", -1),
+                        "httpOnly": c.get("httpOnly", False),
+                        "secure": c.get("secure", False),
+                        "sameSite": c.get("sameSite", "Lax")
+                    })
+                context.add_cookies(playwright_cookies)
+            return self.browser, context
+            
+        # 3. Otherwise, spawn local Chromium process
         port = 9222
         for p in range(9222, 9250):
             if not is_port_open(p):

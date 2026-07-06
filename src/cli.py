@@ -404,7 +404,8 @@ def execute_with_ui(action, title):
         "generate_oes_available_subjects",
         "scrape_multiple"
     ]
-    if os.environ.get("HEADLESS") == "false" and is_browser_task:
+    use_puppetbrowser = os.getenv("USE_PUPPETBROWSER", "false").lower() in ("true", "1", "yes")
+    if os.environ.get("HEADLESS") == "false" and is_browser_task and not use_puppetbrowser:
         print_headful_disclaimer()
     
     try:
@@ -637,7 +638,8 @@ def main():
         return
 
     # Run selected options
-    if os.environ.get("HEADLESS") == "false" and any([args.all, args.schedule, args.transcript, args.evaluation, args.oes_schedule, args.oes_available]):
+    use_puppetbrowser = os.getenv("USE_PUPPETBROWSER", "false").lower() in ("true", "1", "yes")
+    if os.environ.get("HEADLESS") == "false" and not use_puppetbrowser and any([args.all, args.schedule, args.transcript, args.evaluation, args.oes_schedule, args.oes_available]):
         print_headful_disclaimer()
 
     depts_list = None

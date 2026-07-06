@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  puppetbrowser:
+    image: dgtlmoon/sockpuppetbrowser:latest
+    container_name: puppetbrowser
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+      - "8080:8080"
+    environment:
+      - MAX_CONCURRENT_CHROME_PROCESSES=10
+      - HARD_MEMORY_USAGE_LIMIT_PERCENT=90
+      - STATS_REFRESH_SECONDS=10
+      - SCREEN_WIDTH=1920
+      - SCREEN_HEIGHT=1080
+      - CHROME_HEADLESS=true
+    cap_add:
+      - SYS_ADMIN
