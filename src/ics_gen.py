@@ -22,14 +22,127 @@ DAY_MAP = {
 # We use the second year of the S/Y for the calendar year calculation
 
 
-def get_semester_dates(year: int, semester: str) -> tuple[date, date]:
+def parse_date_with_year(date_str: str, default_year: int) -> date | None:
+    # Try common formats: "Jul 20", "July 20", "Jul 20, 2026", "July 20, 2026", "20 July", "20 Jul", etc.
+    # Clean up multiple spaces
+    date_str = re.sub(r'\s+', ' ', date_str.strip())
+    
+    # Try parsing with year first if it has a 4-digit number
+    year_match = re.search(r'\b(20\d{2})\b', date_str)
+    if year_match:
+        year = int(year_match.group(1))
+        # Remove the year from string to parse the rest
+        date_str_no_yr = date_str.replace(year_match.group(1), "").strip()
+        # Clean up any leftover punctuation at the end/middle like commas
+        date_str_no_yr = re.sub(r'[\s,]+', ' ', date_str_no_yr).strip()
+    else:
+        year = default_year
+        date_str_no_yr = date_str
+        
+    # Standard month names to numbers mapping
+    months_map = {
+        'jan': 1, 'feb': 2, 'mar': 3, 'apr': 4, 'may': 5, 'jun': 6,
+        'jul': 7, 'aug': 8, 'sep': 9, 'oct': 10, 'nov': 11, 'dec': 12,
+        'january': 1, 'february': 2, 'march': 3, 'april': 4, 'june': 6,
+        'july': 7, 'august': 8, 'september': 9, 'october': 10, 'november': 11, 'december': 12
+    }
+    
+    # Look for month and day
+    # Pattern 1: "Month Day" e.g., "Jul 20" or "July 20"
+    m1 = re.search(r'\b([A-Za-z]+)\s+(\d{1,2})\b', date_str_no_yr)
+    if m1:
+        mon_str = m1.group(1).lower()
+        if mon_str in months_map:
+            return date(year, months_map[mon_str], int(m1.group(2)))
+            
+    # Pattern 2: "Day Month" e.g., "20 Jul" or "20 July"
+    m2 = re.search(r'\b(\d{1,2})\s+([A-Za-z]+)\b', date_str_no_yr)
+    if m2:
+        mon_str = m2.group(2).lower()
+        if mon_str in months_map:
+            return date(year, months_map[mon_str], int(m2.group(1)))
+            
+    return None
+
+
+def parse_start_date_from_announcement(text: str, default_year: int) -> date | None:
+    """Parse start date from OES announcement text.
+    Only returns a date if it's found under the '1st Sem' / '1st Semester' / 'First Semester' section.
+    """
+    # 1. Normalize line endings and whitespace
+    text = re.sub(r'\r\n', '\n', text)
+    
+    # 2. Find the 1st semester section
+    # Match "1st Semester" or "First Semester" or "1st Sem" or "First Sem"
+    matches = list(re.finditer(r'(?:1st|First)\s*(?:Sem(?:ester)?)\b', text, re.IGNORECASE))
+    if not matches:
+        return None
+        
+    for match in matches:
+        start_idx = match.start()
+        # Look ahead up to 1000 characters
+        window = text[start_idx:start_idx + 1000]
+        
+        # We also want to make sure we don't bleed into the next major semester section like "2nd Sem" or "Summer"
+        # If there is a next semester section in the window, we truncate the window there
+        next_sem_match = re.search(r'(?:2nd|Second|Summer)\s*(?:Sem(?:ester)?|20\d{2})\b', window[20:], re.IGNORECASE)
+        if next_sem_match:
+            # Truncate window at the start of next sem section (offset by 20 to ignore the match at start)
+            window = window[:20 + next_sem_match.start()]
+            
+        # In this window, find "1st Day of Classes" (case-insensitive)
+        match_classes = re.search(
+            r'(?:1st\s+Day\s+of\s+Classes|Start\s+of\s+Classes|Classes\s+Begin)\s*[:\-–]\s*([^\n\r]+)',
+            window,
+            re.IGNORECASE
+        )
+        if match_classes:
+            date_str = match_classes.group(1).strip()
+            # Clean up date_str (remove HTML tags, extra whitespace, etc.)
+            date_str = re.sub(r'<[^>]+>', '', date_str).strip()
+            
+            # Now parse the date string (e.g. "Jul 20" or "July 20")
+            parsed = parse_date_with_year(date_str, default_year)
+            if parsed:
+                return parsed
+                
+    return None
+
+
+def get_semester_dates(year: int, semester: str, check_oes: bool = False) -> tuple[date, date]:
     """Return (start, end) dates for a given school year and semester.
 
     S/Y 2025-2026, 1st Sem -> Aug 2025 - Dec 2025
     S/Y 2025-2026, 2nd Sem -> Jan 2026 - May 2026
     """
-    if "1st" in semester or "First" in semester:
-        return (date(year, 8, 1), date(year, 12, 25))
+    is_first_sem = "1st" in semester or "First" in semester
+    
+    if is_first_sem:
+        start_date = date(year, 8, 1)
+        end_date = date(year, 12, 25)
+        
+        if check_oes:
+            print("Checking OES announcement tab for 1st Day of Classes...")
+            try:
+                try:
+                    from .oes_scraper import fetch_oes_announcement_text
+                except (ImportError, ValueError):
+                    from oes_scraper import fetch_oes_announcement_text
+                
+                annc_text = fetch_oes_announcement_text()
+                parsed_date = parse_start_date_from_announcement(annc_text, year)
+                if parsed_date:
+                    print(f"Found 1st Day of Classes in OES announcement: {parsed_date}")
+                    start_date = parsed_date
+                else:
+                    print("Could not find/parse '1st Day of Classes' for 1st Sem in OES announcements. Falling back to July 20.")
+                    start_date = date(year, 7, 20)
+            except Exception as e:
+                print(f"Error checking OES announcements: {e}. Falling back to July 20.")
+                start_date = date(year, 7, 20)
+                
+        return (start_date, end_date)
+        
     elif "2nd" in semester or "Second" in semester:
         return (date(year + 1, 1, 1), date(year + 1, 5, 29))
     else:
@@ -266,7 +379,7 @@ def generate_ics(html: str, output_path: str = "data/schedule.ics") -> str:
         print("No schedule entries found, skipping ICS generation.")
         return ""
 
-    start_date, end_date = get_semester_dates(year, sem_str)
+    start_date, end_date = get_semester_dates(year, sem_str, check_oes=True)
     print(f"Period: {sem_str} S/Y {year}-{year + 1}")
     print(f"Events: {start_date} to {end_date}")
 

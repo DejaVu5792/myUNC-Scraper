@@ -362,7 +362,7 @@ def generate_ics_schedule(parsed_data: dict, output_path: str = "data/schedule.i
     sy_start = metadata["sy_start"]
     semester = metadata["semester"]
     
-    start_date, end_date = get_semester_dates(sy_start, semester)
+    start_date, end_date = get_semester_dates(sy_start, semester, check_oes=True)
     
     day_rrule_map = {
         'M': 'MO',

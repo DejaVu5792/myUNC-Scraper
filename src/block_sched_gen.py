@@ -455,7 +455,7 @@ def generate_ics_schedules_for_period(year_level, semester, prospectus_path="pro
     # Use current year for dates (matching the default logic of ics_gen.py)
     sy_start = datetime.datetime.now().year
             
-    start_date, end_date = get_semester_dates(sy_start, semester)
+    start_date, end_date = get_semester_dates(sy_start, semester, check_oes=True)
     
     day_rrule_map = {
         'M': 'MO',

@@ -868,6 +868,31 @@ def get_available_subjects(page: Page, departments: list[str] = None) -> list[di
                 
     return all_subjects
 
+def fetch_oes_announcement_text() -> str:
+    """Scrape the OES page and return the inner text of the News/Announcements tab pane."""
+    headless = os.getenv("HEADLESS", "true").lower() == "true"
+    with sync_playwright() as p:
+        session = StealthBrowserSession(p, headless=headless, target_url=OES_BASE_URL)
+        with session as (browser, context):
+            page = create_page(context)
+            print(f"Navigating to {OES_BASE_URL} to fetch announcements...")
+            page.goto(OES_BASE_URL, wait_until="load")
+            solve_turnstile_if_present(page)
+            
+            # Wait for the announcement tab and click it
+            annc_tab = page.locator('//*[@id="nav-anncment-tab"]')
+            annc_tab.wait_for(state="visible", timeout=25000)
+            annc_tab.click()
+            
+            # Wait for the pane to render and load
+            page.wait_for_timeout(2000)
+            
+            # Get the text of the tab panel (id="nav-anncment")
+            pane = page.locator('#nav-anncment')
+            pane.wait_for(state="visible", timeout=10000)
+            return pane.inner_text()
+
+
 def scrape_oes_available_subjects(departments: list[str] = None) -> list[dict]:
     headless = os.getenv("HEADLESS", "true").lower() == "true"
     with sync_playwright() as p:
