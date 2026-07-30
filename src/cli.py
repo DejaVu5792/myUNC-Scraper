@@ -33,6 +33,7 @@ from change_detect import (
 from notify import send_notification
 import block_sched_gen
 from subject_tracker import track_subjects_for_period
+from available_subjects_viewer import interactive_viewer as view_available_subjects
 import inquirer
 from inquirer.themes import BlueComposure
 
@@ -564,7 +565,7 @@ def main():
             os.environ["HEADLESS"] = "false"  # Default to headful in TUI
 
         default_choice = get_last_choice()
-        valid_choices = ["1", "2", "3", "4", "5", "6", "7", "9", "10", "11", "8", "toggle_headful"]
+        valid_choices = ["1", "2", "3", "4", "5", "6", "7", "9", "10", "11", "12", "8", "toggle_headful"]
         if default_choice not in valid_choices:
             default_choice = "2"
 
@@ -584,6 +585,7 @@ def main():
                         ("Generate OES Block Schedules (ICS)", "9"),
                         ("Generate PNG/ICS Schedule from Printout", "11"),
                         ("Run Subject Tracker", "10"),
+                        ("View Available Subjects", "12"),
                         ("Scrape Multiple", "4"),
                         ("Exit", "8"),
                     ],
@@ -619,6 +621,7 @@ def main():
                     "9": (generate_oes_block_schedules_ics, "Generate OES Block Schedules (ICS)"),
                     "10": (run_subject_tracker, "Run Subject Tracker"),
                     "11": (generate_schedule_from_printout, "Generate PNG/ICS Schedule from Printout"),
+                    "12": (view_available_subjects, "View Available Subjects"),
                 }
 
                 action_info = actions.get(choice)
